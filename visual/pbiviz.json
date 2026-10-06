@@ -1,0 +1,26 @@
+{
+  "visual": {
+    "name": "discoverChatBot",
+    "displayName": "Discover Chat Bot",
+    "guid": "discoverChatBot09E811F9CAF94C58AD6EEF5D7849A3F7",
+    "visualClassName": "Visual",
+    "version": "1.0.0.0",
+    "description": "AI chatbot that answers questions over the Power BI semantic models you are authorized to access.",
+    "supportUrl": "https://chatbot-api.example.com/support",
+    "gitHubUrl": ""
+  },
+  "apiVersion": "5.11.1",
+  "author": {
+    "name": "Discover Chat Bot",
+    "email": "gautamporiya1234@gmail.com"
+  },
+  "assets": {
+    "icon": "assets/icon.png"
+  },
+  "externalJS": null,
+  "style": "style/visual.less",
+  "capabilities": "capabilities.json",
+  "dependencies": null,
+  "stringResources": [],
+  "version": "1.0.0.0"
+}

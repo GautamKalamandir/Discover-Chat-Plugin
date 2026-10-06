@@ -1,0 +1,26 @@
+{
+  "visual": {
+    "name": "discoverChatBot",
+    "displayName": "discoverChatBot",
+    "guid": "discoverChatBot09E811F9CAF94C58AD6EEF5D7849A3F7",
+    "visualClassName": "Visual",
+    "version": "1.0.0.0",
+    "description": "",
+    "supportUrl": "",
+    "gitHubUrl": ""
+  },
+  "apiVersion": "5.11.1",
+  "author": {
+    "name": "",
+    "email": ""
+  },
+  "assets": {
+    "icon": "assets/icon.png"
+  },
+  "externalJS": null,
+  "style": "style/visual.less",
+  "capabilities": "capabilities.json",
+  "dependencies": null,
+  "stringResources": [],
+  "version": "1.0.0.0"
+}
