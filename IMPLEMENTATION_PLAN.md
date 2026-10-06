@@ -5,7 +5,7 @@
 
 | Item | Value |
 |---|---|
-| Status | **Phases 1 and 3 DONE 2026-10-06.** Phase 0 is with IT (docs/entra-setup.md). Phase 2 waits on IT. Next candidate: Phase 4 |
+| Status | **Phases 1, 3 and 4 DONE 2026-10-06.** Phase 0 is with IT (docs/entra-setup.md). Phase 2 waits on IT. Next candidate: Phase 5 (needs Q15, Q16) |
 | Last research pass | 2026-10-06 (Microsoft Learn docs verified, see §13) |
 | Approval model | Each phase is implemented only after explicit approval. Nothing beyond the current approved phase is built. |
 
@@ -496,12 +496,28 @@ Acceptance: all auth tests green. Invalid tokens never reach business code.
 
 ---
 
-### Phase 4 — Data layer (PostgreSQL) ⛔
+### Phase 4 — Data layer (PostgreSQL) ✅ DONE 2026-10-06
 **Goal:** Schema from §5.2 with migrations and repositories.
 
 Tasks: SQLAlchemy 2.x models, Alembic migrations, repositories, seed script for the model registry, retention policy hooks
 (per Q9), indexes on (`user_id`, `model_id`), (`session_id`, `created_at`).
 Acceptance: migrations up/down clean. Repository tests green against the docker Postgres.
+
+**Delivered:**
+- 12 tables (migration `0002`; `alembic check` shows no drift). Enum columns are enforced by DB CHECK constraints.
+  `chat_messages.seq` (identity column) gives a reliable order within one transaction.
+- Repositories: users (upsert by `tenant_id + object_id`), chat (owner-only `get_owned_session`; also hides sessions
+  past retention before cleanup), query executions (no parameter for rows), audit (detail-key allow-list, so no
+  question text), registry plus authz-cache rows.
+- Scenario 22: another user's session id returns the same `session_not_found` (404) as a non-existent one.
+- Retention (ADR 0004): `run_cleanup` behind a Postgres advisory lock, used by the built-in `CleanupScheduler` and by
+  `python -m app.jobs.cleanup`. Invalid `.env` values fall back to the defaults with a warning.
+- 105 tests pass (stable across 5 runs). Integration tests use an auto-created `discover_test` DB, with a rollback
+  per test. Verified live: the scheduler runs on startup and the standalone command exits 0.
+- Fixed along the way: Alembic's `fileConfig` silenced the app's loggers when migrations ran in-process.
+
+**Not in this phase:** Metadata/glossary repositories (Phase 7). Registry seed tooling arrives with the first real
+model IDs (Phase 2/7).
 
 ---
 
@@ -684,6 +700,7 @@ tool layer, not HTTP routes exposed to the visual.
 | Q8 | **uv + Python 3.12**, Node LTS for pbiviz, local `git init` (remote TBD). |
 | Q6 | **Company work tenant. IT provides** the app registration, admin consent, tenant settings and custom domain. Request: [docs/entra-setup.md](docs/entra-setup.md). Development continues with mocks until IT delivers. Live spikes wait on IT. |
 | Q7 | **Hybrid model context:** the report author picks the primary model in the Format pane (dropdown of models they can access). Optional bound fields supply slicer/filter context. |
+| Q9 | **Retention via `.env`, in hours** (ADR 0004). `CONVERSATION_RETENTION_HOURS` (fallback **12**) counts from **last activity**. `AUDIT_RETENTION_HOURS` is separate (fallback **2160**). Stored: questions, answers, DAX and result metadata, **never raw result rows**. Cleanup runs both as a built-in scheduler and as a standalone command, with a DB lock. |
 | Q7b | **Cross-model questions in v1.** The agent routes among the other models the user is authorized for, queries each separately, and combines the results. If any required model is denied, the whole request is denied. |
 
 ### 12.2 Remaining questions
@@ -694,7 +711,6 @@ before Phase 1; the others are asked before the phase that needs them.
 | # | Question | Blocks |
 |---|---|---|
 | Q5 | Hosting target for backend: Azure Container Apps / App Service / AKS / on-prem? | Phase 13 |
-| Q9 | Conversation/audit retention period. May questions, DAX, and results be stored? PII rules? | Phase 4 |
 | Q10 | Source of business glossary/synonyms (model descriptions, Excel/CSV, Copilot "Prep data for AI" metadata, SMEs)? Which identity runs metadata sync? | Phase 7 |
 | Q11 | Scale: number of users, expected concurrency, number of models (≈50?), languages (English only?) | Phase 12 |
 | Q12 | Must Teams or Power BI Embedded be supported? (Auth API doesn't support them.) | Architecture |

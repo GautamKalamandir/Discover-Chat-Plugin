@@ -26,6 +26,7 @@ class ErrorCode(StrEnum):
     METHOD_NOT_ALLOWED = "method_not_allowed"
     PAYLOAD_TOO_LARGE = "payload_too_large"
     VALIDATION_ERROR = "validation_error"
+    SESSION_NOT_FOUND = "session_not_found"
     # 401 — the visual should acquire a fresh token and retry once
     MISSING_TOKEN = "missing_token"
     INVALID_TOKEN = "invalid_token"

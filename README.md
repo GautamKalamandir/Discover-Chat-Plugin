@@ -47,8 +47,11 @@ uv run uvicorn app.main:create_app --factory --reload --port 8000
 uv run python -m scripts.mint_dev_token --oid user-a --name "User A"
 #   then: curl -H "Authorization: Bearer <token>" http://localhost:8000/api/v1/session
 
-# 4. Quality checks
+# 4. Quality checks (database tests use a separate `discover_test` database, created automatically)
 uv run ruff check . && uv run ruff format --check . && uv run mypy && uv run pytest
+
+# Retention cleanup also runs on its own, e.g. from OS cron / a container or cloud scheduler:
+uv run python -m app.jobs.cleanup
 
 # 5. Visual
 cd ../visual
@@ -61,6 +64,9 @@ npx pbiviz package      # -> visual/dist/*.pbiviz
 
 | Setting | Values |
 |---|---|
+| `CONVERSATION_RETENTION_HOURS` | hours of inactivity before a conversation is deleted (fallback 12) |
+| `AUDIT_RETENTION_HOURS` | hours audit events are kept (fallback 2160 = 90 days) |
+| `CLEANUP_SCHEDULER_ENABLED` / `CLEANUP_INTERVAL_MINUTES` | built-in cleanup job (fallback every 15 min) |
 | `AUTH_PROVIDER` | `entra` (real Power BI SSO), `dev` (local only, refused in dev/prod environments) |
 | `LLM_PROVIDER` | `groq`, `openai` |
 | `EMBEDDING_PROVIDER` | `local`, `openai` (changing it requires a vector re-index) |

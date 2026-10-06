@@ -19,7 +19,8 @@ from app.core.middleware import (
     CorrelationIdMiddleware,
     SecurityHeadersMiddleware,
 )
-from app.db.session import get_engine
+from app.db.session import create_engine, create_sessionmaker
+from app.retention.scheduler import CleanupScheduler
 
 
 def create_app(
@@ -34,17 +35,28 @@ def create_app(
     # Built eagerly so a misconfigured deployment fails at startup, not on the first request.
     provider = auth_provider or create_auth_provider(settings)
     broker = token_broker or create_token_broker(settings)
+    engine = create_engine(settings)
+    sessionmaker = create_sessionmaker(engine)
+    scheduler = (
+        CleanupScheduler(sessionmaker, settings) if settings.cleanup_scheduler_enabled else None
+    )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        if scheduler:
+            scheduler.start()
         yield
+        if scheduler:
+            await scheduler.stop()
         await provider.aclose()
-        await get_engine().dispose()
+        await engine.dispose()
 
     app = FastAPI(title=settings.app_name, version="0.1.0", lifespan=lifespan)
     app.state.settings = settings
     app.state.auth_provider = provider
     app.state.token_broker = broker
+    app.state.db_engine = engine
+    app.state.db_sessionmaker = sessionmaker
 
     register_error_handlers(app)
     app.include_router(api_router)

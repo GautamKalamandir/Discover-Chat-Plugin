@@ -4,11 +4,24 @@ Every switchable behaviour (auth provider, LLM provider, embedding provider, Pow
 is selected here from environment variables / `.env` only — no code change is needed to switch.
 """
 
+import logging
 from enum import StrEnum
 from functools import lru_cache
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+logger = logging.getLogger(__name__)
+
+DEFAULT_CONVERSATION_RETENTION_HOURS = 12
+DEFAULT_AUDIT_RETENTION_HOURS = 2160  # 90 days
+DEFAULT_CLEANUP_INTERVAL_MINUTES = 15
+_MAX_HOURS_OR_MINUTES = 1_000_000  # guards against overflow from absurd values
+_FALLBACKS = {
+    "conversation_retention_hours": DEFAULT_CONVERSATION_RETENTION_HOURS,
+    "audit_retention_hours": DEFAULT_AUDIT_RETENTION_HOURS,
+    "cleanup_interval_minutes": DEFAULT_CLEANUP_INTERVAL_MINUTES,
+}
 
 # Power BI client applications that request tokens for custom visuals (commercial cloud).
 # https://learn.microsoft.com/en-us/power-bi/developer/visuals/entra-id-authentication
@@ -66,6 +79,39 @@ class Settings(BaseSettings):
 
     # --- Database ---
     database_url: str = "postgresql+asyncpg://discover:discover@localhost:5432/discover"
+
+    # --- Retention (ADR 0004). Missing/invalid values fall back to the defaults below. ---
+    # Conversations are deleted after this many hours without activity.
+    conversation_retention_hours: int = DEFAULT_CONVERSATION_RETENTION_HOURS
+    # Security audit events are deleted after this many hours.
+    audit_retention_hours: int = DEFAULT_AUDIT_RETENTION_HOURS
+    # Built-in cleanup scheduler; the same job is also runnable as `python -m app.jobs.cleanup`.
+    cleanup_scheduler_enabled: bool = True
+    cleanup_interval_minutes: int = DEFAULT_CLEANUP_INTERVAL_MINUTES
+
+    @field_validator(
+        "conversation_retention_hours",
+        "audit_retention_hours",
+        "cleanup_interval_minutes",
+        mode="before",
+    )
+    @classmethod
+    def _positive_int_or_default(cls, value: object, info: ValidationInfo) -> int:
+        default = _FALLBACKS[info.field_name or ""]
+        try:
+            number = int(str(value).strip())
+        except (TypeError, ValueError):
+            number = 0
+        if 0 < number <= _MAX_HOURS_OR_MINUTES:
+            return number
+        if value not in (None, ""):
+            logger.warning(
+                "%s=%r is not a positive whole number; using fallback %d",
+                (info.field_name or "").upper(),
+                value,
+                default,
+            )
+        return default
 
     # --- Authentication ---
     auth_provider: AuthProviderName = AuthProviderName.ENTRA

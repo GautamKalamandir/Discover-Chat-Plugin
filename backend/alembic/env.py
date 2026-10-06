@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 from app.core.config import get_settings
+from app.db import models  # noqa: F401 - registers tables on Base.metadata
 from app.db.base import Base
 
 # this is the Alembic Config object, which provides
@@ -16,10 +17,13 @@ config = context.config
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # Keep loggers created before migrations ran (e.g. the app's) working.
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
-# The database URL always comes from app settings (.env), never from alembic.ini.
-config.set_main_option("sqlalchemy.url", get_settings().database_url.replace("%", "%%"))
+# The database URL comes from app settings (.env), never from alembic.ini. Callers such as the
+# test suite may set it programmatically on the Config before running a command.
+if not config.get_main_option("sqlalchemy.url"):
+    config.set_main_option("sqlalchemy.url", get_settings().database_url.replace("%", "%%"))
 
 target_metadata = Base.metadata
 

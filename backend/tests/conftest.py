@@ -14,6 +14,8 @@ from app.auth.jwks import StaticKeySource
 from app.core.config import POWERBI_WFE_CLIENT_ID, AuthProviderName, Environment, Settings
 from app.main import create_app
 
+pytest_plugins = ["tests.db"]
+
 TENANT_ID = "11111111-1111-1111-1111-111111111111"
 OTHER_TENANT_ID = "99999999-9999-9999-9999-999999999999"
 CLIENT_ID = "22222222-2222-2222-2222-222222222222"
@@ -41,6 +43,7 @@ def entra_settings() -> Settings:
         entra_allowed_tenant_ids=[TENANT_ID],
         entra_required_scope=SCOPE,
         entra_client_secret="not-used-in-tests",
+        cleanup_scheduler_enabled=False,
     )
 
 
