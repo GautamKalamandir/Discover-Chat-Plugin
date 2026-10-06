@@ -1,0 +1,41 @@
+{
+  "tables": [
+    {
+      "name": "Sales",
+      "description": "Invoice-level sales transactions",
+      "columns": [
+        {"name": "InvoiceDate", "dataType": "DateTime", "description": "Date of the invoice"},
+        {"name": "SalesKey", "dataType": "Int64", "isHidden": true}
+      ],
+      "measures": [
+        {"name": "Total Net Sales", "expression": "SUM(Sales[NetAmount])",
+         "description": "Revenue after returns and discounts"}
+      ]
+    },
+    {
+      "name": "Product",
+      "description": "Product master",
+      "columns": [
+        {"name": "LOB", "dataType": "String", "description": "Line of Business of the product"},
+        {"name": "Category", "dataType": "String", "description": "Product category"}
+      ]
+    },
+    {
+      "name": "Customer",
+      "columns": [
+        {"name": "CreditLimit", "dataType": "Decimal", "description": "Approved customer credit limit"}
+      ]
+    }
+  ],
+  "CustomInstructions": "Revenue means [Total Net Sales] unless the user says otherwise.\nFY means the financial year from April to March.",
+  "VerifiedAnswers": [
+    {
+      "title": "Sales by LOB",
+      "triggerPhrases": ["sales by line of business", "LOB wise sales"],
+      "fields": [
+        {"table": "Product", "name": "LOB", "kind": "column"},
+        {"table": "Sales", "name": "Total Net Sales", "kind": "measure"}
+      ]
+    }
+  ]
+}

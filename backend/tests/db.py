@@ -13,7 +13,7 @@ import pytest
 from alembic.config import Config
 from sqlalchemy import text
 from sqlalchemy.engine import make_url
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from alembic import command
@@ -68,3 +68,28 @@ async def db_session(test_database_url: str) -> AsyncIterator[AsyncSession]:
             await session.close()
             await outer.rollback()
     await engine.dispose()
+
+
+APP_TABLES = (
+    "audit_events, query_executions, chat_messages, chat_sessions, user_model_access, "
+    "business_glossary, model_metadata, reports, semantic_models, workspaces, users, tenants"
+)
+
+
+@pytest.fixture
+async def committed_sessionmaker(
+    test_database_url: str,
+) -> AsyncIterator[async_sessionmaker[AsyncSession]]:
+    """For code that commits its own transactions. Tables are wiped before and after the test."""
+    engine = create_async_engine(test_database_url, poolclass=NullPool)
+
+    async def wipe() -> None:
+        async with engine.begin() as conn:
+            await conn.execute(text(f"TRUNCATE {APP_TABLES} RESTART IDENTITY CASCADE"))
+
+    await wipe()
+    try:
+        yield async_sessionmaker(engine, expire_on_commit=False)
+    finally:
+        await wipe()
+        await engine.dispose()

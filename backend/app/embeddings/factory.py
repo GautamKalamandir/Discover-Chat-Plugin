@@ -3,12 +3,16 @@ from collections.abc import Callable
 from app.core.config import EmbeddingProviderName, Settings, get_settings
 from app.core.errors import ProviderNotAvailableError
 from app.embeddings.base import EmbeddingProvider
+from app.embeddings.local import FastEmbedProvider
+from app.embeddings.openai import OpenAIEmbeddingProvider
 
 EmbeddingBuilder = Callable[[Settings], EmbeddingProvider]
 
-# Implementations register themselves here (Phase 7).
 # Selection is driven only by EMBEDDING_PROVIDER.
-_REGISTRY: dict[EmbeddingProviderName, EmbeddingBuilder] = {}
+_REGISTRY: dict[EmbeddingProviderName, EmbeddingBuilder] = {
+    EmbeddingProviderName.LOCAL: FastEmbedProvider,
+    EmbeddingProviderName.OPENAI: OpenAIEmbeddingProvider,
+}
 
 
 def register_embedding_provider(name: EmbeddingProviderName, builder: EmbeddingBuilder) -> None:

@@ -26,7 +26,11 @@ class ErrorCode(StrEnum):
     METHOD_NOT_ALLOWED = "method_not_allowed"
     PAYLOAD_TOO_LARGE = "payload_too_large"
     VALIDATION_ERROR = "validation_error"
+    QUERY_REJECTED = "query_rejected"
+    QUERY_FAILED = "query_failed"
+    POWERBI_THROTTLED = "powerbi_throttled"
     SESSION_NOT_FOUND = "session_not_found"
+    MODEL_NOT_FOUND = "model_not_found"
     # 401 — the visual should acquire a fresh token and retry once
     MISSING_TOKEN = "missing_token"
     INVALID_TOKEN = "invalid_token"
@@ -37,9 +41,14 @@ class ErrorCode(StrEnum):
     CLIENT_NOT_ALLOWED = "client_not_allowed"
     INSUFFICIENT_SCOPE = "insufficient_scope"
     CONSENT_REQUIRED = "consent_required"
+    MODEL_ACCESS_DENIED = "model_access_denied"
+    NEEDS_BUILD_PERMISSION = "needs_build_permission"
     # 5xx
     TOKEN_EXCHANGE_FAILED = "token_exchange_failed"
     SERVICE_MISCONFIGURED = "service_misconfigured"
+    ACCESS_CHECK_UNAVAILABLE = "access_check_unavailable"
+    POWERBI_UNAVAILABLE = "powerbi_unavailable"
+    POWERBI_TIMEOUT = "powerbi_timeout"
     INTERNAL_ERROR = "internal_error"
 
 

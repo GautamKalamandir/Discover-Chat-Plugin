@@ -17,6 +17,7 @@ semantic models **using each user's own Power BI permissions** (single sign-on).
 | 4 | Enable **Power BI tenant settings** (list below), scoped to a pilot security group if preferred | Fabric / Power BI administrator | Visual SSO + querying |
 | 5 | Name **2–3 test users** with different model access (one under row-level security, if used) and a test workspace with ≥ 3 semantic models | Power BI admin / workspace owner | Security testing |
 | 6 | Tell us whether **Conditional Access** policies apply to Power BI (MFA, compliant device, location) | Entra admin | Token exchange behaviour |
+| 7 | *(Optional)* A second, small app registration for the **admin metadata-sync command** (details in §4) | Entra admin | Admin-triggered metadata sync |
 
 ---
 
@@ -65,6 +66,13 @@ Then:
 | Power BI Service | `Item.Execute.All` | Run read-only queries the user is already allowed to run (Fabric IQ MCP) |
 | Power BI Service | `Workspace.Read.All` | List workspaces the user can already access |
 
+The backend requests two delegated token audiences from the same **Power BI Service** resource
+(`00000009-0000-0000-c000-000000000000`):
+- `https://analysis.windows.net/powerbi/api/.default` for the Power BI REST APIs;
+- `https://api.fabric.microsoft.com/.default`, which the Fabric IQ MCP endpoint advertises.
+
+The consent above covers both.
+
 No *Application* permissions are requested. The backend can never act without a signed-in user, and it can never see
 more than that user can see in Power BI. Row-level and object-level security continue to apply.
 
@@ -95,7 +103,22 @@ Primary query path: Microsoft's **Fabric IQ MCP server** (`https://fabriciq.svc.
 Microsoft documents it as available only when the tenant's **home region supports all Fabric workloads**. Please
 confirm the tenant home region (**Help (?) → About Power BI → "Your data is stored in"**).
 
-## 4. Security notes for review
+## 4. (Optional) Admin CLI app registration
+
+Lets a chatbot administrator run a metadata sync from a terminal, signed in as themselves (device-code login). It is
+kept separate so the main API registration doesn't need public-client flows.
+
+| Field | Value |
+|---|---|
+| Name | `Discover-Chat-Bot-Admin-CLI` |
+| Supported account types | Single tenant |
+| Authentication | **Allow public client flows: Yes** (device code). No redirect URI, no secret |
+| API permissions (Delegated, admin consent) | Power BI Service: `Dataset.Read.All`, `Item.Read.All`, `Item.Execute.All` |
+
+It reads model **metadata only** (tables, columns, measures, descriptions, AI instructions), never data rows, and
+only what the signed-in admin can already see.
+
+## 5. Security notes for review
 
 - Every Power BI query runs with **the signed-in user's own delegated token** (OAuth 2.0 On-Behalf-Of). Power BI
   enforces workspace permissions, item permissions, row-level security and object-level security.

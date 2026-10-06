@@ -11,9 +11,11 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     BigInteger,
     Boolean,
+    Computed,
     DateTime,
     Enum,
     ForeignKey,
@@ -26,7 +28,7 @@ from sqlalchemy import (
     func,
     text,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, TSVECTOR, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -259,6 +261,67 @@ class BusinessGlossaryEntry(Base):
     definition: Mapped[str] = mapped_column(Text)
     maps_to: Mapped[str | None] = mapped_column(String(512))  # e.g. "[Total Net Sales]"
     created_by: Mapped[str | None] = mapped_column(String(320))
+    created_at: Mapped[datetime] = _created_at()
+    updated_at: Mapped[datetime] = _updated_at()
+
+
+class EmbeddingSpace(Base):
+    """One per (provider, model). Switching EMBEDDING_PROVIDER/MODEL creates a new space; documents
+    are re-embedded into it. Each space gets its own HNSW index (created at runtime, ADR 0007)."""
+
+    __tablename__ = "embedding_spaces"
+    __table_args__ = (UniqueConstraint("provider", "model"),)
+
+    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
+    provider: Mapped[str] = mapped_column(String(32))
+    model: Mapped[str] = mapped_column(String(255))
+    dimensions: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = _created_at()
+
+
+class SemanticDocument(Base):
+    """Searchable business meaning for one model object or instruction. Never holds data values.
+
+    `referenced_objects` (e.g. "measure:Sales[Total Net Sales]") are checked against each user's
+    own live schema at query time, so object-level security is respected.
+    """
+
+    __tablename__ = "semantic_documents"
+    __table_args__ = (
+        UniqueConstraint("semantic_model_id", "embedding_space_id", "doc_key"),
+        Index("ix_semantic_documents_model_space", "semantic_model_id", "embedding_space_id"),
+        Index("ix_semantic_documents_search_tsv", "search_tsv", postgresql_using="gin"),
+    )
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    semantic_model_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("semantic_models.id", ondelete="CASCADE")
+    )
+    embedding_space_id: Mapped[int] = mapped_column(
+        ForeignKey("embedding_spaces.id", ondelete="CASCADE")
+    )
+    doc_key: Mapped[str] = mapped_column(String(600))
+    doc_type: Mapped[str] = mapped_column(String(32))
+    source: Mapped[str] = mapped_column(String(32))
+    title: Mapped[str] = mapped_column(String(600))
+    content: Mapped[str] = mapped_column(Text)
+    content_hash: Mapped[str] = mapped_column(String(64))
+    referenced_objects: Mapped[list[str]] = mapped_column(
+        ARRAY(String(600)), server_default=text("'{}'")
+    )
+    extra: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    # Dimension is fixed per embedding space (enforced by the per-space HNSW index cast).
+    embedding: Mapped[list[float]] = mapped_column(Vector())
+    search_tsv: Mapped[str] = mapped_column(
+        TSVECTOR,
+        Computed(
+            "to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(content, ''))",
+            persisted=True,
+        ),
+    )
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), index=True
+    )
     created_at: Mapped[datetime] = _created_at()
     updated_at: Mapped[datetime] = _updated_at()
 

@@ -5,7 +5,7 @@
 
 | Item | Value |
 |---|---|
-| Status | **Phases 1, 3 and 4 DONE 2026-10-06.** Phase 0 is with IT (docs/entra-setup.md). Phase 2 waits on IT. Next candidate: Phase 5 (needs Q15, Q16) |
+| Status | **Phases 1, 3, 4, 5, 6 and 7 DONE 2026-10-06.** Phase 0 is with IT (docs/entra-setup.md). Phase 2 waits on IT. Next candidate: Phase 8 (needs Q13) |
 | Last research pass | 2026-10-06 (Microsoft Learn docs verified, see §13) |
 | Approval model | Each phase is implemented only after explicit approval. Nothing beyond the current approved phase is built. |
 
@@ -521,7 +521,7 @@ model IDs (Phase 2/7).
 
 ---
 
-### Phase 5 — Authorization service ⛔ 🔍
+### Phase 5 — Authorization service ✅ DONE 2026-10-06 🔍
 **Goal:** L1, L2, L4 enforcement with the cache/revalidation policy of §6.3.
 
 Tasks:
@@ -534,9 +534,29 @@ Tasks:
 Tests: scenarios 1, 2, 4, 5, 6, 11, 20 with a fake gateway and live smoke tests.
 Acceptance: no code path reaches retrieval/tools without passing `assert_allowed`.
 
+**Delivered** (design: [docs/design/phase-5-authorization.md](docs/design/phase-5-authorization.md), ADR 0005):
+- Three gates:
+  - **G1** `get_authorized_context` dependency (allowed set per request);
+  - **G2** `assert_allowed` / `require_model_access` (whole request denied if any model is not allowed; a cached
+    denial is re-checked live first);
+  - **G3** `@requires_model_access` tool decorator for Phase 8.
+- Access probe: `GET /v1.0/myorg/datasets/{id}` with the user's OBO token (parallel, capped, timeout). If Power BI
+  doesn't answer, the model is treated as not allowed for that request and nothing is cached (503 when explicitly
+  needed). `DevAccessProbe` reads `DEV_MODEL_ACCESS`.
+- Cache: `user_model_access`, allowed 10 min / denied 2 min, shared across instances. `on_power_bi_denied` hook for
+  Phase 6 handles revocation.
+- Generic denials (Q16). Unknown, disabled and forbidden models are indistinguishable (403 in chat, 404 on
+  `/models/{id}`). Explicit decisions go to `audit_events`, committed independently of the request.
+- `GET /api/v1/models/accessible`, `GET /api/v1/models/{id}`, and the `app.jobs.registry` CLI.
+- 148 tests pass (3 runs). Verified live in dev mode: two users get different model lists, forbidden and
+  non-existent models get identical 404s, and the audit rows are written.
+
+**Waiting on IT:** the real Power BI probe was tested only against a mocked Power BI. A live check with real
+tokens is part of spike S2.
+
 ---
 
-### Phase 6 — Power BI integration layer ⛔ 🔍
+### Phase 6 — Power BI integration layer ✅ DONE 2026-10-06 🔍
 **Goal:** One `PowerBIGateway` interface, two implementations.
 
 Interface (conceptual): `list_accessible_models`, `get_schema(model)`, `search_values(model, column?, text)`,
@@ -552,9 +572,38 @@ Tasks:
 
 Tests: contract tests with recorded responses, live smoke tests against the test tenant.
 
+**Delivered (ADR 0006):**
+- `PowerBIService` is the only path to Power BI. Each call runs, in order:
+  1. G3 (model must be in the AuthorizedContext);
+  2. read-only DAX check (`DEFINE`/`EVALUATE` only, no DMV/`INFO.*`, ≤ 20k chars);
+  3. a per-gateway OBO token;
+  4. the primary gateway, then the fallback;
+  5. retries with backoff (Retry-After honoured, ≤ 10 s);
+  6. user-safe typed errors.
+- `FabricIqMcpGateway` (official `mcp` SDK 2.3, Streamable HTTP):
+  - Tools `ExecuteQuery(artifactId, daxQueries, maxRows)`, `GetSemanticModelSchema(artifactId)` and
+    `ValueSearch(artifactId, searchTerms)`, with `X-Variants` pinning and a one-time `tools/list` contract check.
+  - Parses JSON, wrapped-string and embedded-CSV results.
+  - An endpoint-level refusal (401/403/404/5xx) means "unavailable, fall back", never "revoke".
+- `PowerBiRestGateway`: `executeQueries`, nested DAX-error extraction, truncation flag, per-user 120/min limiter.
+- When Power BI refuses a query, access is re-checked live. If access is gone: revoke and give the generic denial. If
+  access remains: try the next gateway, or on REST report `needs_build_permission`.
+- DAX errors never fall back. They carry `dax_error` for the Phase 8 repair loop, and users see a generic message.
+- **Found by probing the real endpoint:** Fabric IQ advertises scope `https://api.fabric.microsoft.com/.default`, not
+  the Power BI REST scope. The broker now issues tokens per scope (same resource, same consent).
+- 223 tests pass (3 runs), including an in-process MCP server built with the same SDK, so the real client plumbing
+  is exercised. Test time went from 52 s to 13 s after making HTTP clients lazy.
+
+**Not yet verified (spike S3, needs IT):**
+- the real `ExecuteQuery` / `GetSemanticModelSchema` / `ValueSearch` output shapes;
+- the exact tool-error wording used for classification;
+- that the Fabric-scope OBO token is accepted end to end.
+
+Schema/value payloads are kept raw until then (Phase 7 structures them).
+
 ---
 
-### Phase 7 — Semantic knowledge layer (metadata sync + vector store) ⛔
+### Phase 7 — Semantic knowledge layer (metadata sync + vector store) ✅ DONE 2026-10-06
 **Goal:** L3. Model-scoped retrieval of business meaning.
 
 Tasks:
@@ -565,6 +614,34 @@ Tasks:
 - `POST /api/v1/models/{id}/refresh-metadata` (admin-only).
 
 Tests: scenario 9 (restricted vectors never returned), 16 (OLS intersection), retrieval quality spot-checks.
+
+**Delivered** (design: [docs/design/phase-7-semantic-knowledge.md](docs/design/phase-7-semantic-knowledge.md), ADR 0007):
+- Index is built from the **Power BI semantic model only** (Q10a): one document per table/column/measure, plus AI
+  instructions and verified answers. The model summary uses registry fields only. Hidden objects are not
+  advertised. The DAX expression is kept but not embedded. No data values are stored.
+- Migration `0003`: `embedding_spaces` + `semantic_documents` (pgvector + generated STORED tsvector + GIN). A
+  partial HNSW index per space is created at runtime and ignored by Alembic.
+- Retrieval:
+  1. model gate (SQL filter before ranking, scenario 9);
+  2. vector + full-text fused with RRF, with verified-answer and exact-name boosts;
+  3. intersection with the user's live schema (scenario 16, fails closed).
+
+  `route_models` handles cross-model routing over allowed models only.
+- Sync (Q10b): on use in the background (deduplicated, version-checked, only changed docs re-embedded), plus the
+  admin CLI `app.jobs.metadata sync` (device code, separate app registration), plus `load-fixture` for dev.
+  Stale docs are purged after 7 days by the cleanup job.
+- Embeddings (Q10c): fastembed `BAAI/bge-small-en-v1.5` (384 dims, no PyTorch, lazy download), or OpenAI
+  `text-embedding-3-small`. Switching in `.env` creates a new space.
+- 262 tests pass, plus the real-model `network` test. Verified live in dev mode with real fastembed: correct
+  ranking, Finance never returned to a user without access, routing to Sales + HR, HNSW index used.
+
+**Carried to Phase 8:**
+- When a question names a domain the user can't access (e.g. Finance), `route_models` simply doesn't return it.
+  The agent must detect the uncovered domain and give the generic denial instead of a partial answer (scenario 6).
+
+**Waiting on IT (spike S3):**
+- the real `GetSemanticModelSchema` payload shape (fixtures are a best guess);
+- tuning on real models.
 
 ---
 
@@ -701,6 +778,9 @@ tool layer, not HTTP routes exposed to the visual.
 | Q6 | **Company work tenant. IT provides** the app registration, admin consent, tenant settings and custom domain. Request: [docs/entra-setup.md](docs/entra-setup.md). Development continues with mocks until IT delivers. Live spikes wait on IT. |
 | Q7 | **Hybrid model context:** the report author picks the primary model in the Format pane (dropdown of models they can access). Optional bound fields supply slicer/filter context. |
 | Q9 | **Retention via `.env`, in hours** (ADR 0004). `CONVERSATION_RETENTION_HOURS` (fallback **12**) counts from **last activity**. `AUDIT_RETENTION_HOURS` is separate (fallback **2160**). Stored: questions, answers, DAX and result metadata, **never raw result rows**. Cleanup runs both as a built-in scheduler and as a standalone command, with a DB lock. |
+| Q15 | Authorization cache: **allowed 10 min, denied 2 min** (Q15b). A denial for an explicitly requested model is always re-checked live. Configurable in `.env` (ADR 0005). |
+| Q16 | **Generic denials.** The restricted model is never named. Unknown, disabled and forbidden models look identical (ADR 0005). |
+| Q10 | Business meaning comes from the **Power BI semantic model only**, with no CSV import for now (Q10a). Sync **on use + admin CLI** (Q10b). Local embeddings via **fastembed** (Q10c). ADR 0007. |
 | Q7b | **Cross-model questions in v1.** The agent routes among the other models the user is authorized for, queries each separately, and combines the results. If any required model is denied, the whole request is denied. |
 
 ### 12.2 Remaining questions
@@ -711,13 +791,10 @@ before Phase 1; the others are asked before the phase that needs them.
 | # | Question | Blocks |
 |---|---|---|
 | Q5 | Hosting target for backend: Azure Container Apps / App Service / AKS / on-prem? | Phase 13 |
-| Q10 | Source of business glossary/synonyms (model descriptions, Excel/CSV, Copilot "Prep data for AI" metadata, SMEs)? Which identity runs metadata sync? | Phase 7 |
 | Q11 | Scale: number of users, expected concurrency, number of models (≈50?), languages (English only?) | Phase 12 |
 | Q12 | Must Teams or Power BI Embedded be supported? (Auth API doesn't support them.) | Architecture |
 | Q13 | Agent framework: plain SDK tool loop (recommended for control), LangGraph, Semantic Kernel, or other? | Phase 8 |
 | Q14 | Frontend stack inside the visual: plain TS + lightweight DOM, or React? | Phase 10 |
-| Q15 | Authz cache TTLs (proposed: allowed 10 min / denied 2 min) acceptable? | Phase 5 |
-| Q16 | On denial, may the bot **name** the restricted model ("you don't have access to Finance") or should it be fully generic? | Phase 5 |
 
 ---
 

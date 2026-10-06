@@ -28,3 +28,6 @@ webpack.statistics.*.html
 .idea/
 .DS_Store
 Thumbs.db
+
+# Downloaded embedding models
+.cache/

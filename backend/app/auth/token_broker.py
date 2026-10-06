@@ -36,8 +36,17 @@ class OboClient(Protocol):
 
 
 class TokenBroker(ABC):
+    """Delegated tokens for the signed-in user.
+
+    `scope=None` means the Power BI REST scope. Fabric IQ MCP needs the Fabric API scope instead:
+    the same Entra resource (Power BI Service), so the same consent, but a different audience.
+    """
+
     @abstractmethod
-    async def get_powerbi_token(self, ctx: RequestContext) -> str: ...
+    async def get_token(self, ctx: RequestContext, scope: str | None = None) -> str: ...
+
+    async def get_powerbi_token(self, ctx: RequestContext) -> str:
+        return await self.get_token(ctx)
 
 
 @dataclass(frozen=True)
@@ -50,15 +59,16 @@ class OboTokenBroker(TokenBroker):
     def __init__(
         self, settings: Settings, client_factory: Callable[[str], OboClient] | None = None
     ) -> None:
-        self._scopes = [settings.powerbi_scope]
+        self._default_scope = settings.powerbi_scope
         self._client_factory = client_factory or (lambda tid: _build_msal_client(settings, tid))
         # One MSAL client per tenant: the exchange must happen in the user's own tenant.
         self._clients: dict[str, OboClient] = {}
         self._cache: dict[str, _CachedToken] = {}
         self._lock = asyncio.Lock()
 
-    async def get_powerbi_token(self, ctx: RequestContext) -> str:
-        cache_key = f"{ctx.user.key}|{' '.join(self._scopes)}"
+    async def get_token(self, ctx: RequestContext, scope: str | None = None) -> str:
+        scopes = [scope or self._default_scope]
+        cache_key = f"{ctx.user.key}|{scopes[0]}"
         cached = self._cache.get(cache_key)
         if cached and cached.expires_at - EXPIRY_SKEW_SECONDS > time.time():
             return cached.access_token
@@ -72,7 +82,7 @@ class OboTokenBroker(TokenBroker):
         result = await asyncio.to_thread(
             client.acquire_token_on_behalf_of,
             user_assertion=ctx.access_token,
-            scopes=self._scopes,
+            scopes=scopes,
         )
         if "access_token" not in result:
             raise _map_obo_error(result)
@@ -94,7 +104,7 @@ class OboTokenBroker(TokenBroker):
 class UnavailableTokenBroker(TokenBroker):
     """Used with AUTH_PROVIDER=dev: there is no Entra token to exchange."""
 
-    async def get_powerbi_token(self, ctx: RequestContext) -> str:
+    async def get_token(self, ctx: RequestContext, scope: str | None = None) -> str:
         raise AppError(
             ErrorCode.SERVICE_MISCONFIGURED,
             "Power BI access is not available in local development mode.",

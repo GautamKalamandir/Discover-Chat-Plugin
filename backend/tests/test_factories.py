@@ -6,10 +6,10 @@ from app.core.config import (
     PowerBIGatewayName,
     Settings,
 )
-from app.core.errors import ProviderNotAvailableError
+from app.core.errors import ConfigurationError, ProviderNotAvailableError
 from app.embeddings.factory import create_embedding_provider
 from app.llm.factory import create_llm_provider
-from app.powerbi.factory import create_powerbi_gateway
+from app.powerbi.factory import create_gateways, create_powerbi_gateway
 
 
 @pytest.mark.parametrize("provider", list(LLMProviderName))
@@ -18,16 +18,45 @@ def test_llm_factory_reports_unregistered_provider(provider: LLMProviderName) ->
         create_llm_provider(Settings(llm_provider=provider))
 
 
-@pytest.mark.parametrize("provider", list(EmbeddingProviderName))
-def test_embedding_factory_reports_unregistered_provider(provider: EmbeddingProviderName) -> None:
-    with pytest.raises(ProviderNotAvailableError, match=provider.value):
-        create_embedding_provider(Settings(embedding_provider=provider))
+def test_local_embedding_provider_is_fastembed_bge_small() -> None:
+    provider = create_embedding_provider(Settings(_env_file=None, embedding_provider="local"))
+
+    assert (provider.name, provider.model, provider.dimension) == (
+        "local",
+        "BAAI/bge-small-en-v1.5",
+        384,
+    )
+
+
+def test_openai_embedding_provider_needs_an_api_key() -> None:
+    with pytest.raises(ConfigurationError, match="OPENAI_API_KEY"):
+        create_embedding_provider(Settings(_env_file=None, embedding_provider="openai"))
+
+
+def test_openai_embedding_dimensions_come_from_the_model() -> None:
+    provider = create_embedding_provider(
+        Settings(_env_file=None, embedding_provider="openai", openai_api_key="sk-test")
+    )
+
+    assert (provider.model, provider.dimension) == ("text-embedding-3-small", 1536)
+
+
+def test_unknown_local_model_is_a_configuration_error() -> None:
+    with pytest.raises(ConfigurationError, match="fastembed"):
+        create_embedding_provider(Settings(_env_file=None, embedding_model="no/such-model"))
 
 
 @pytest.mark.parametrize("gateway", list(PowerBIGatewayName))
-def test_powerbi_factory_reports_unregistered_gateway(gateway: PowerBIGatewayName) -> None:
-    with pytest.raises(ProviderNotAvailableError, match=gateway.value):
-        create_powerbi_gateway(Settings(powerbi_gateway=gateway))
+def test_powerbi_factory_builds_every_configured_gateway(gateway: PowerBIGatewayName) -> None:
+    assert create_powerbi_gateway(Settings(powerbi_gateway=gateway)).name == gateway.value
+
+
+def test_fallback_equal_to_primary_is_ignored() -> None:
+    settings = Settings(powerbi_gateway="rest", powerbi_fallback_gateway="rest")
+
+    primary, fallback = create_gateways(settings)
+
+    assert (primary.name, fallback) == ("rest", None)
 
 
 def test_providers_are_selected_from_environment(monkeypatch: pytest.MonkeyPatch) -> None:

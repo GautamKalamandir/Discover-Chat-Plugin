@@ -80,6 +80,18 @@ class RegistryRepository:
         stmt = select(SemanticModel).where(SemanticModel.pbi_dataset_id == pbi_dataset_id)
         return (await self._session.scalars(stmt)).one_or_none()
 
+    async def set_model_enabled(self, pbi_dataset_id: str, enabled: bool) -> bool:
+        model = await self.get_model_by_pbi_id(pbi_dataset_id)
+        if model is None:
+            return False
+        model.chatbot_enabled = enabled
+        await self._session.flush()
+        return True
+
+    async def list_all_models(self) -> Sequence[SemanticModel]:
+        stmt = select(SemanticModel).order_by(SemanticModel.name)
+        return (await self._session.scalars(stmt)).all()
+
     async def list_chatbot_models(self) -> Sequence[SemanticModel]:
         """Candidate models for authorization: enabled for the chatbot and active."""
         stmt = (

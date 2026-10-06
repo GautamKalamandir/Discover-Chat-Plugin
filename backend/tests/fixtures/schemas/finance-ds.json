@@ -1,0 +1,23 @@
+{
+  "tables": [
+    {
+      "name": "GL",
+      "description": "General ledger",
+      "columns": [
+        {
+          "name": "CostCentre",
+          "dataType": "String",
+          "description": "Cost centre code"
+        }
+      ],
+      "measures": [
+        {
+          "name": "Budget Variance",
+          "expression": "[Actual]-[Budget]",
+          "description": "Credit exposure and budget variance against plan"
+        }
+      ]
+    }
+  ],
+  "CustomInstructions": "Variance is actual minus budget."
+}

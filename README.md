@@ -50,6 +50,18 @@ uv run python -m scripts.mint_dev_token --oid user-a --name "User A"
 # 4. Quality checks (database tests use a separate `discover_test` database, created automatically)
 uv run ruff check . && uv run ruff format --check . && uv run mypy && uv run pytest
 
+# Register semantic models (only registered + enabled models can ever be used by the chatbot):
+uv run python -m app.jobs.registry add --dataset-id <id> --workspace-id <id>     --workspace-name "Sales WS" --name "Sales" --domain Sales --enable
+uv run python -m app.jobs.registry list
+#   GET /api/v1/models/accessible -> the signed-in user's models (dev mode: DEV_MODEL_ACCESS)
+
+# Semantic index (Phase 7). In dev mode, index the sample schemas:
+uv run python -m app.jobs.metadata load-fixture --dataset-id sales-ds --file dev-fixtures/schemas/sales-ds.json
+uv run python -m app.jobs.metadata status
+#   With Power BI access: models index themselves on first use; admins can force it with
+#   uv run python -m app.jobs.metadata sync --all   (device-code sign-in, needs ADMIN_CLI_CLIENT_ID)
+#   Tests that download the real embedding model: uv run pytest -m network
+
 # Retention cleanup also runs on its own, e.g. from OS cron / a container or cloud scheduler:
 uv run python -m app.jobs.cleanup
 
@@ -67,9 +79,10 @@ npx pbiviz package      # -> visual/dist/*.pbiviz
 | `CONVERSATION_RETENTION_HOURS` | hours of inactivity before a conversation is deleted (fallback 12) |
 | `AUDIT_RETENTION_HOURS` | hours audit events are kept (fallback 2160 = 90 days) |
 | `CLEANUP_SCHEDULER_ENABLED` / `CLEANUP_INTERVAL_MINUTES` | built-in cleanup job (fallback every 15 min) |
+| `AUTHZ_ALLOWED_TTL_MINUTES` / `AUTHZ_DENIED_TTL_MINUTES` | how long Power BI access answers are cached (fallback 10 / 2) |
 | `AUTH_PROVIDER` | `entra` (real Power BI SSO), `dev` (local only, refused in dev/prod environments) |
 | `LLM_PROVIDER` | `groq`, `openai` |
-| `EMBEDDING_PROVIDER` | `local`, `openai` (changing it requires a vector re-index) |
+| `EMBEDDING_PROVIDER` | `local` (fastembed, BAAI/bge-small-en-v1.5), `openai`; switching re-embeds into a new index space |
 | `POWERBI_GATEWAY` / `POWERBI_FALLBACK_GATEWAY` | `fabric_iq_mcp`, `rest` |
 
 ## Placeholders to replace before release

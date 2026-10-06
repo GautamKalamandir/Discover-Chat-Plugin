@@ -16,11 +16,37 @@ logger = logging.getLogger(__name__)
 DEFAULT_CONVERSATION_RETENTION_HOURS = 12
 DEFAULT_AUDIT_RETENTION_HOURS = 2160  # 90 days
 DEFAULT_CLEANUP_INTERVAL_MINUTES = 15
+DEFAULT_AUTHZ_ALLOWED_TTL_MINUTES = 10
+DEFAULT_AUTHZ_DENIED_TTL_MINUTES = 2
+DEFAULT_AUTHZ_PROBE_CONCURRENCY = 8
+DEFAULT_AUTHZ_PROBE_TIMEOUT_SECONDS = 10
+DEFAULT_POWERBI_QUERY_TIMEOUT_SECONDS = 60
+DEFAULT_POWERBI_MAX_RETRIES = 2
+DEFAULT_POWERBI_REST_QUERIES_PER_MINUTE = 120  # Microsoft's per-user Execute Queries limit
+DEFAULT_POWERBI_DEFAULT_MAX_ROWS = 250
+DEFAULT_POWERBI_MAX_ROWS_LIMIT = 1000  # Fabric IQ ExecuteQuery maximum
+DEFAULT_RETRIEVAL_TOP_K = 12
+DEFAULT_RETRIEVAL_CANDIDATES = 50
+DEFAULT_USER_SCHEMA_CACHE_MINUTES = 10
+DEFAULT_METADATA_STALE_DAYS = 7
 _MAX_HOURS_OR_MINUTES = 1_000_000  # guards against overflow from absurd values
 _FALLBACKS = {
     "conversation_retention_hours": DEFAULT_CONVERSATION_RETENTION_HOURS,
     "audit_retention_hours": DEFAULT_AUDIT_RETENTION_HOURS,
     "cleanup_interval_minutes": DEFAULT_CLEANUP_INTERVAL_MINUTES,
+    "authz_allowed_ttl_minutes": DEFAULT_AUTHZ_ALLOWED_TTL_MINUTES,
+    "authz_denied_ttl_minutes": DEFAULT_AUTHZ_DENIED_TTL_MINUTES,
+    "authz_probe_concurrency": DEFAULT_AUTHZ_PROBE_CONCURRENCY,
+    "authz_probe_timeout_seconds": DEFAULT_AUTHZ_PROBE_TIMEOUT_SECONDS,
+    "powerbi_query_timeout_seconds": DEFAULT_POWERBI_QUERY_TIMEOUT_SECONDS,
+    "powerbi_max_retries": DEFAULT_POWERBI_MAX_RETRIES,
+    "powerbi_rest_queries_per_minute": DEFAULT_POWERBI_REST_QUERIES_PER_MINUTE,
+    "powerbi_default_max_rows": DEFAULT_POWERBI_DEFAULT_MAX_ROWS,
+    "powerbi_max_rows_limit": DEFAULT_POWERBI_MAX_ROWS_LIMIT,
+    "retrieval_top_k": DEFAULT_RETRIEVAL_TOP_K,
+    "retrieval_candidates": DEFAULT_RETRIEVAL_CANDIDATES,
+    "user_schema_cache_minutes": DEFAULT_USER_SCHEMA_CACHE_MINUTES,
+    "metadata_stale_days": DEFAULT_METADATA_STALE_DAYS,
 }
 
 # Power BI client applications that request tokens for custom visuals (commercial cloud).
@@ -89,10 +115,31 @@ class Settings(BaseSettings):
     cleanup_scheduler_enabled: bool = True
     cleanup_interval_minutes: int = DEFAULT_CLEANUP_INTERVAL_MINUTES
 
+    # --- Authorization (ADR 0005). Missing/invalid values fall back to the defaults below. ---
+    authz_allowed_ttl_minutes: int = DEFAULT_AUTHZ_ALLOWED_TTL_MINUTES
+    authz_denied_ttl_minutes: int = DEFAULT_AUTHZ_DENIED_TTL_MINUTES
+    authz_probe_concurrency: int = DEFAULT_AUTHZ_PROBE_CONCURRENCY
+    authz_probe_timeout_seconds: int = DEFAULT_AUTHZ_PROBE_TIMEOUT_SECONDS
+    # AUTH_PROVIDER=dev only: {"<object id>": ["<dataset id>", ...]} — who may access what locally.
+    dev_model_access: dict[str, list[str]] = Field(default_factory=dict)
+
     @field_validator(
         "conversation_retention_hours",
         "audit_retention_hours",
         "cleanup_interval_minutes",
+        "authz_allowed_ttl_minutes",
+        "authz_denied_ttl_minutes",
+        "authz_probe_concurrency",
+        "authz_probe_timeout_seconds",
+        "powerbi_query_timeout_seconds",
+        "powerbi_max_retries",
+        "powerbi_rest_queries_per_minute",
+        "powerbi_default_max_rows",
+        "powerbi_max_rows_limit",
+        "retrieval_top_k",
+        "retrieval_candidates",
+        "user_schema_cache_minutes",
+        "metadata_stale_days",
         mode="before",
     )
     @classmethod
@@ -140,8 +187,20 @@ class Settings(BaseSettings):
 
     # --- Power BI ---
     powerbi_scope: str = "https://analysis.windows.net/powerbi/api/.default"
+    powerbi_api_base_url: str = "https://api.powerbi.com/v1.0/myorg"
     powerbi_gateway: PowerBIGatewayName = PowerBIGatewayName.FABRIC_IQ_MCP
     powerbi_fallback_gateway: PowerBIGatewayName | None = PowerBIGatewayName.REST
+    # Fabric IQ MCP (primary). The variant header pins the tool contract version.
+    fabric_iq_mcp_url: str = "https://fabriciq.svc.cloud.microsoft/v1/mcp/fabriciq"
+    fabric_iq_tool_variant: str = "Fabric.Routing.FabricIQ.V1"
+    # Advertised by the endpoint's OAuth protected-resource metadata (checked 2026-10-06).
+    fabric_iq_token_scope: str = "https://api.fabric.microsoft.com/.default"  # noqa: S105 - scope
+    # Query execution (ADR 0006). Missing/invalid values fall back to the defaults.
+    powerbi_query_timeout_seconds: int = DEFAULT_POWERBI_QUERY_TIMEOUT_SECONDS
+    powerbi_max_retries: int = DEFAULT_POWERBI_MAX_RETRIES
+    powerbi_rest_queries_per_minute: int = DEFAULT_POWERBI_REST_QUERIES_PER_MINUTE
+    powerbi_default_max_rows: int = DEFAULT_POWERBI_DEFAULT_MAX_ROWS
+    powerbi_max_rows_limit: int = DEFAULT_POWERBI_MAX_ROWS_LIMIT
 
     # --- LLM (provider/factory, switched via .env) ---
     llm_provider: LLMProviderName = LLMProviderName.GROQ
@@ -152,9 +211,25 @@ class Settings(BaseSettings):
     openai_api_key: SecretStr | None = None
     openai_base_url: str | None = None
 
-    # --- Embeddings (provider/factory, switched via .env) ---
+    # --- Embeddings (provider/factory, switched via .env; ADR 0007) ---
     embedding_provider: EmbeddingProviderName = EmbeddingProviderName.LOCAL
+    # Local (fastembed) model; downloaded once into embedding_cache_dir.
     embedding_model: str = "BAAI/bge-small-en-v1.5"
+    embedding_cache_dir: str = ".cache/embeddings"
+    openai_embedding_model: str = "text-embedding-3-small"
+    # Only needed for OpenAI-compatible models not in the built-in dimension table.
+    openai_embedding_dimensions: int | None = None
+
+    # --- Semantic knowledge / retrieval (ADR 0007) ---
+    retrieval_top_k: int = DEFAULT_RETRIEVAL_TOP_K
+    retrieval_candidates: int = DEFAULT_RETRIEVAL_CANDIDATES
+    user_schema_cache_minutes: int = DEFAULT_USER_SCHEMA_CACHE_MINUTES
+    metadata_sync_on_use: bool = True
+    metadata_stale_days: int = DEFAULT_METADATA_STALE_DAYS
+    # AUTH_PROVIDER=dev only: folder with <dataset id>.json schema payloads (stand-in for Power BI).
+    dev_schema_fixture_dir: str = "dev-fixtures/schemas"
+    # Optional public-client app registration for the admin sync CLI (docs/entra-setup.md §4).
+    admin_cli_client_id: str | None = None
 
 
 @lru_cache

@@ -119,3 +119,19 @@ async def test_dev_mode_broker_explains_power_bi_is_unavailable() -> None:
         await UnavailableTokenBroker().get_powerbi_token(ctx())
 
     assert excinfo.value.status_code == 503
+
+
+async def test_tokens_for_different_scopes_are_exchanged_and_cached_separately() -> None:
+    client = FakeOboClient(
+        [
+            {"access_token": "pbi", "expires_in": 3600},
+            {"access_token": "fabric", "expires_in": 3600},
+        ]
+    )
+    sut = broker(client)
+    fabric_scope = "https://api.fabric.microsoft.com/.default"
+
+    assert await sut.get_token(ctx()) == "pbi"
+    assert await sut.get_token(ctx(), fabric_scope) == "fabric"
+    assert await sut.get_token(ctx(), fabric_scope) == "fabric"
+    assert [scopes for _, scopes in client.calls] == [[POWERBI_SCOPE], [fabric_scope]]

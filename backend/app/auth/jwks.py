@@ -36,7 +36,7 @@ class JwksKeySource(SigningKeySource):
         self._jwks_url = jwks_url
         self._ttl = ttl_seconds
         self._min_refresh_interval = min_refresh_interval
-        self._client = http_client or httpx.AsyncClient(timeout=10)
+        self._client = http_client  # created on first use: building one loads the CA bundle
         self._keys: dict[str, Any] = {}
         self._fetched_at: float | None = None
         self._lock = asyncio.Lock()
@@ -60,6 +60,8 @@ class JwksKeySource(SigningKeySource):
             )
             if recently and not force:
                 return
+            if self._client is None:
+                self._client = httpx.AsyncClient(timeout=10)
             response = await self._client.get(self._jwks_url)
             response.raise_for_status()
             keys: dict[str, Any] = {}
@@ -71,7 +73,8 @@ class JwksKeySource(SigningKeySource):
             logger.info("Loaded %d signing keys from JWKS", len(keys))
 
     async def aclose(self) -> None:
-        await self._client.aclose()
+        if self._client is not None:
+            await self._client.aclose()
 
 
 class StaticKeySource(SigningKeySource):

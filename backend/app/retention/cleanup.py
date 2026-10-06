@@ -5,6 +5,7 @@
 - audit_events older than AUDIT_RETENTION_HOURS
 - expired authorization-cache rows (they are re-verified against Power BI anyway)
 - users with no remaining conversations who haven't been seen within either window
+- semantic documents not seen by any metadata sync for METADATA_STALE_DAYS (ADR 0007)
 """
 
 import logging
@@ -16,7 +17,7 @@ from sqlalchemy import CursorResult, Delete, delete, exists, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
-from app.db.models import AuditEvent, ChatSession, User, UserModelAccess
+from app.db.models import AuditEvent, ChatSession, SemanticDocument, User, UserModelAccess
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,7 @@ class CleanupResult:
     audit_events: int = 0
     access_cache: int = 0
     users: int = 0
+    semantic_documents: int = 0
 
 
 async def run_cleanup(
@@ -65,16 +67,29 @@ async def run_cleanup(
         ),
     )
 
+    documents = await _delete(
+        session,
+        delete(SemanticDocument).where(
+            SemanticDocument.last_seen_at < now - timedelta(days=settings.metadata_stale_days)
+        ),
+    )
+
     result = CleanupResult(
-        ran=True, chat_sessions=sessions, audit_events=audits, access_cache=access, users=users
+        ran=True,
+        chat_sessions=sessions,
+        audit_events=audits,
+        access_cache=access,
+        users=users,
+        semantic_documents=documents,
     )
     logger.info(
         "Retention cleanup: sessions=%d audit_events=%d access_cache=%d users=%d "
-        "(conversation=%dh audit=%dh)",
+        "semantic_documents=%d (conversation=%dh audit=%dh)",
         sessions,
         audits,
         access,
         users,
+        documents,
         settings.conversation_retention_hours,
         settings.audit_retention_hours,
     )
