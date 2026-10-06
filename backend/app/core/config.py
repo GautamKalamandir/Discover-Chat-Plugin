@@ -29,6 +29,16 @@ DEFAULT_RETRIEVAL_TOP_K = 12
 DEFAULT_RETRIEVAL_CANDIDATES = 50
 DEFAULT_USER_SCHEMA_CACHE_MINUTES = 10
 DEFAULT_METADATA_STALE_DAYS = 7
+DEFAULT_LLM_TIMEOUT_SECONDS = 60
+DEFAULT_LLM_MAX_RETRIES = 2
+DEFAULT_AGENT_MAX_QUESTION_CHARS = 2000
+DEFAULT_AGENT_HISTORY_TURNS = 6
+DEFAULT_AGENT_MAX_QUERY_STEPS = 4
+DEFAULT_AGENT_MAX_REPAIRS = 2
+DEFAULT_AGENT_RESULT_ROWS_TO_LLM = 50
+DEFAULT_AGENT_TABLE_ROWS = 200
+DEFAULT_AGENT_CONTEXT_DOCS = 12
+DEFAULT_FISCAL_YEAR_START_MONTH = 4  # Q13c: April-March
 _MAX_HOURS_OR_MINUTES = 1_000_000  # guards against overflow from absurd values
 _FALLBACKS = {
     "conversation_retention_hours": DEFAULT_CONVERSATION_RETENTION_HOURS,
@@ -47,6 +57,15 @@ _FALLBACKS = {
     "retrieval_candidates": DEFAULT_RETRIEVAL_CANDIDATES,
     "user_schema_cache_minutes": DEFAULT_USER_SCHEMA_CACHE_MINUTES,
     "metadata_stale_days": DEFAULT_METADATA_STALE_DAYS,
+    "llm_timeout_seconds": DEFAULT_LLM_TIMEOUT_SECONDS,
+    "llm_max_retries": DEFAULT_LLM_MAX_RETRIES,
+    "agent_max_question_chars": DEFAULT_AGENT_MAX_QUESTION_CHARS,
+    "agent_history_turns": DEFAULT_AGENT_HISTORY_TURNS,
+    "agent_max_query_steps": DEFAULT_AGENT_MAX_QUERY_STEPS,
+    "agent_max_repairs": DEFAULT_AGENT_MAX_REPAIRS,
+    "agent_result_rows_to_llm": DEFAULT_AGENT_RESULT_ROWS_TO_LLM,
+    "agent_table_rows": DEFAULT_AGENT_TABLE_ROWS,
+    "agent_context_docs": DEFAULT_AGENT_CONTEXT_DOCS,
 }
 
 # Power BI client applications that request tokens for custom visuals (commercial cloud).
@@ -81,6 +100,7 @@ class EmbeddingProviderName(StrEnum):
 class PowerBIGatewayName(StrEnum):
     FABRIC_IQ_MCP = "fabric_iq_mcp"
     REST = "rest"
+    DEV_SYNTHETIC = "dev_synthetic"  # ENVIRONMENT=local/test only: fake rows labelled DEV DATA
 
 
 class Settings(BaseSettings):
@@ -132,7 +152,6 @@ class Settings(BaseSettings):
         "authz_probe_concurrency",
         "authz_probe_timeout_seconds",
         "powerbi_query_timeout_seconds",
-        "powerbi_max_retries",
         "powerbi_rest_queries_per_minute",
         "powerbi_default_max_rows",
         "powerbi_max_rows_limit",
@@ -140,6 +159,13 @@ class Settings(BaseSettings):
         "retrieval_candidates",
         "user_schema_cache_minutes",
         "metadata_stale_days",
+        "llm_timeout_seconds",
+        "agent_max_question_chars",
+        "agent_history_turns",
+        "agent_max_query_steps",
+        "agent_result_rows_to_llm",
+        "agent_table_rows",
+        "agent_context_docs",
         mode="before",
     )
     @classmethod
@@ -202,14 +228,64 @@ class Settings(BaseSettings):
     powerbi_default_max_rows: int = DEFAULT_POWERBI_DEFAULT_MAX_ROWS
     powerbi_max_rows_limit: int = DEFAULT_POWERBI_MAX_ROWS_LIMIT
 
-    # --- LLM (provider/factory, switched via .env) ---
+    # --- LLM (provider/factory, switched via .env; Q13b) ---
     llm_provider: LLMProviderName = LLMProviderName.GROQ
-    llm_model: str = "llama-3.3-70b-versatile"
+    llm_model: str = "openai/gpt-oss-120b"
     llm_temperature: float = Field(default=0.0, ge=0.0, le=2.0)
-    llm_max_output_tokens: int = Field(default=2048, gt=0)
+    llm_max_output_tokens: int = Field(default=4096, gt=0)
+    llm_timeout_seconds: int = DEFAULT_LLM_TIMEOUT_SECONDS
+    llm_max_retries: int = DEFAULT_LLM_MAX_RETRIES
     groq_api_key: SecretStr | None = None
+    groq_base_url: str = "https://api.groq.com/openai/v1"
     openai_api_key: SecretStr | None = None
     openai_base_url: str | None = None
+
+    # --- Agent (ADR 0008). Missing/invalid values fall back to the defaults. ---
+    agent_max_question_chars: int = DEFAULT_AGENT_MAX_QUESTION_CHARS
+    agent_history_turns: int = DEFAULT_AGENT_HISTORY_TURNS
+    agent_max_query_steps: int = DEFAULT_AGENT_MAX_QUERY_STEPS
+    agent_max_repairs: int = DEFAULT_AGENT_MAX_REPAIRS
+    agent_result_rows_to_llm: int = DEFAULT_AGENT_RESULT_ROWS_TO_LLM
+    agent_table_rows: int = DEFAULT_AGENT_TABLE_ROWS
+    agent_context_docs: int = DEFAULT_AGENT_CONTEXT_DOCS
+    fiscal_year_start_month: int = DEFAULT_FISCAL_YEAR_START_MONTH
+
+    @field_validator("powerbi_max_retries", "llm_max_retries", "agent_max_repairs", mode="before")
+    @classmethod
+    def _non_negative_int_or_default(cls, value: object, info: ValidationInfo) -> int:
+        # Retry/repair counts may be 0 ("don't retry").
+        default = _FALLBACKS[info.field_name or ""]
+        try:
+            number = int(str(value).strip())
+        except (TypeError, ValueError):
+            number = -1
+        if 0 <= number <= 10:
+            return number
+        if value not in (None, ""):
+            logger.warning(
+                "%s=%r is not a whole number 0-10; using fallback %d",
+                (info.field_name or "").upper(),
+                value,
+                default,
+            )
+        return default
+
+    @field_validator("fiscal_year_start_month", mode="before")
+    @classmethod
+    def _month_or_default(cls, value: object) -> int:
+        try:
+            month = int(str(value).strip())
+        except (TypeError, ValueError):
+            month = 0
+        if 1 <= month <= 12:
+            return month
+        if value not in (None, ""):
+            logger.warning(
+                "FISCAL_YEAR_START_MONTH=%r is not 1-12; using fallback %d",
+                value,
+                DEFAULT_FISCAL_YEAR_START_MONTH,
+            )
+        return DEFAULT_FISCAL_YEAR_START_MONTH
 
     # --- Embeddings (provider/factory, switched via .env; ADR 0007) ---
     embedding_provider: EmbeddingProviderName = EmbeddingProviderName.LOCAL

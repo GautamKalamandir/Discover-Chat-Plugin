@@ -112,7 +112,11 @@ class PowerBIService:
         for index, gateway in enumerate(gateways):
             is_last = index == len(gateways) - 1
             # Each path has its own token audience (Fabric API vs Power BI REST); both cached.
-            token = await self._broker.get_token(authz.request, gateway.token_scope)
+            token = (
+                await self._broker.get_token(authz.request, gateway.token_scope)
+                if gateway.requires_user_token
+                else ""
+            )
             try:
                 return await self._with_retries(functools.partial(operation, gateway, token))
             except (GatewayUnavailableError, CapabilityNotSupportedError) as exc:

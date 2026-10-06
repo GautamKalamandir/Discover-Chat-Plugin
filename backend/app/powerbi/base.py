@@ -49,6 +49,8 @@ class PowerBIGateway(ABC):
     requires_build_permission: bool = False
     # OAuth scope of the token this gateway needs; None = the Power BI REST scope.
     token_scope: str | None = None
+    # False only for the local dev gateway, which never calls Power BI.
+    requires_user_token: bool = True
 
     @abstractmethod
     async def execute_dax(

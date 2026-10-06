@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.agent.orchestrator import Agent
 from app.api.v1.router import api_router
 from app.auth.base import AuthProvider
 from app.auth.factory import create_auth_provider
@@ -24,6 +25,8 @@ from app.core.middleware import (
 from app.db.session import create_engine, create_sessionmaker
 from app.embeddings.base import EmbeddingProvider
 from app.embeddings.factory import create_embedding_provider
+from app.llm.base import LLMProvider
+from app.llm.factory import create_llm_provider_for_app
 from app.powerbi.base import PowerBIGateway
 from app.powerbi.factory import create_gateways
 from app.powerbi.service import PowerBIService
@@ -44,6 +47,7 @@ def create_app(
     gateways: tuple[PowerBIGateway, PowerBIGateway | None] | None = None,
     embedder: EmbeddingProvider | None = None,
     schema_source: SchemaSource | None = None,
+    llm: LLMProvider | None = None,
 ) -> FastAPI:
     settings = settings or get_settings()
     configure_logging(settings.log_level, settings.log_json)
@@ -65,6 +69,17 @@ def create_app(
         schema_source or create_schema_source(settings, powerbi_service), metadata_sync, settings
     )
     retriever = SemanticRetriever(sessionmaker, indexer, user_schemas, settings)
+    # Agent (Phase 8). Without an LLM key the app still starts outside production.
+    llm_provider = llm or create_llm_provider_for_app(settings)
+    agent = Agent(
+        llm_provider,
+        retriever,
+        user_schemas,
+        powerbi_service,
+        authz_service,
+        sessionmaker,
+        settings,
+    )
     scheduler = (
         CleanupScheduler(sessionmaker, settings) if settings.cleanup_scheduler_enabled else None
     )
@@ -76,6 +91,7 @@ def create_app(
         yield
         if scheduler:
             await scheduler.stop()
+        await llm_provider.aclose()
         await metadata_sync.aclose()
         await powerbi_service.aclose()
         await authz_service.aclose()
@@ -92,6 +108,8 @@ def create_app(
     app.state.powerbi_service = powerbi_service
     app.state.metadata_sync = metadata_sync
     app.state.retriever = retriever
+    app.state.agent = agent
+    app.state.llm = llm_provider
 
     register_error_handlers(app)
     app.include_router(api_router)

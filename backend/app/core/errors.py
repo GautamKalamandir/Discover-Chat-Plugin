@@ -29,6 +29,8 @@ class ErrorCode(StrEnum):
     QUERY_REJECTED = "query_rejected"
     QUERY_FAILED = "query_failed"
     POWERBI_THROTTLED = "powerbi_throttled"
+    QUESTION_INVALID = "question_invalid"
+    CANNOT_ANSWER = "cannot_answer"
     SESSION_NOT_FOUND = "session_not_found"
     MODEL_NOT_FOUND = "model_not_found"
     # 401 — the visual should acquire a fresh token and retry once
@@ -49,6 +51,8 @@ class ErrorCode(StrEnum):
     ACCESS_CHECK_UNAVAILABLE = "access_check_unavailable"
     POWERBI_UNAVAILABLE = "powerbi_unavailable"
     POWERBI_TIMEOUT = "powerbi_timeout"
+    LLM_UNAVAILABLE = "llm_unavailable"
+    LLM_OUTPUT_INVALID = "llm_output_invalid"
     INTERNAL_ERROR = "internal_error"
 
 

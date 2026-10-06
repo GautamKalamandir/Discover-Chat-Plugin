@@ -3,6 +3,7 @@ from collections.abc import Callable
 from app.core.config import PowerBIGatewayName, Settings, get_settings
 from app.core.errors import ProviderNotAvailableError
 from app.powerbi.base import PowerBIGateway
+from app.powerbi.dev_synthetic import DevSyntheticGateway
 from app.powerbi.fabric_iq import FabricIqMcpGateway
 from app.powerbi.rest import PowerBiRestGateway
 
@@ -12,6 +13,7 @@ GatewayBuilder = Callable[[Settings], PowerBIGateway]
 _REGISTRY: dict[PowerBIGatewayName, GatewayBuilder] = {
     PowerBIGatewayName.FABRIC_IQ_MCP: FabricIqMcpGateway,
     PowerBIGatewayName.REST: PowerBiRestGateway,
+    PowerBIGatewayName.DEV_SYNTHETIC: DevSyntheticGateway,
 }
 
 

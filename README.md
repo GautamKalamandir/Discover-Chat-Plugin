@@ -62,6 +62,11 @@ uv run python -m app.jobs.metadata status
 #   uv run python -m app.jobs.metadata sync --all   (device-code sign-in, needs ADMIN_CLI_CLIENT_ID)
 #   Tests that download the real embedding model: uv run pytest -m network
 
+# Ask the agent from the terminal (dev mode; set GROQ_API_KEY and POWERBI_GATEWAY=dev_synthetic):
+uv run python -m app.jobs.ask --user user-a --model sales-ds "What are GOLD sales this FY?"
+uv run python -m app.jobs.ask --user user-a --session <id> "and last year?"
+#   Real-LLM smoke test: GROQ_API_KEY=... uv run pytest -m network -k groq
+
 # Retention cleanup also runs on its own, e.g. from OS cron / a container or cloud scheduler:
 uv run python -m app.jobs.cleanup
 
@@ -81,7 +86,8 @@ npx pbiviz package      # -> visual/dist/*.pbiviz
 | `CLEANUP_SCHEDULER_ENABLED` / `CLEANUP_INTERVAL_MINUTES` | built-in cleanup job (fallback every 15 min) |
 | `AUTHZ_ALLOWED_TTL_MINUTES` / `AUTHZ_DENIED_TTL_MINUTES` | how long Power BI access answers are cached (fallback 10 / 2) |
 | `AUTH_PROVIDER` | `entra` (real Power BI SSO), `dev` (local only, refused in dev/prod environments) |
-| `LLM_PROVIDER` | `groq`, `openai` |
+| `LLM_PROVIDER` / `LLM_MODEL` | `groq` / `openai`; default model `openai/gpt-oss-120b` |
+| `FISCAL_YEAR_START_MONTH` | 4 (April-March) |
 | `EMBEDDING_PROVIDER` | `local` (fastembed, BAAI/bge-small-en-v1.5), `openai`; switching re-embeds into a new index space |
 | `POWERBI_GATEWAY` / `POWERBI_FALLBACK_GATEWAY` | `fabric_iq_mcp`, `rest` |
 

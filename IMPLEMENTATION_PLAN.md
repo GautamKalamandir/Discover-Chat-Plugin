@@ -5,7 +5,7 @@
 
 | Item | Value |
 |---|---|
-| Status | **Phases 1, 3, 4, 5, 6 and 7 DONE 2026-10-06.** Phase 0 is with IT (docs/entra-setup.md). Phase 2 waits on IT. Next candidate: Phase 8 (needs Q13) |
+| Status | **Phases 1, 3–8 DONE 2026-10-06.** Phase 0 is with IT (docs/entra-setup.md). Phase 2 waits on IT. Next candidate: Phase 9 (chat API + SSE) |
 | Last research pass | 2026-10-06 (Microsoft Learn docs verified, see §13) |
 | Approval model | Each phase is implemented only after explicit approval. Nothing beyond the current approved phase is built. |
 
@@ -645,7 +645,7 @@ Tests: scenario 9 (restricted vectors never returned), 16 (OLS intersection), re
 
 ---
 
-### Phase 8 — Agent core ⛔
+### Phase 8 — Agent core ✅ DONE 2026-10-06
 **Goal:** Question → plan → guarded tools → validated DAX → result → grounded answer.
 
 Components:
@@ -670,6 +670,27 @@ Components:
 - Framework per Q13.
 
 Tests: scenarios 7, 8, 12, 17, 18. Unit tests per tool. Golden-question eval seed (Phase 12).
+
+**Delivered** (design: [docs/design/phase-8-agent.md](docs/design/phase-8-agent.md), ADR 0008). The design above
+was superseded by Q13 (fixed pipeline, no LLM tool calls):
+- `app/agent/` pipeline: input guard → history → candidate models (primary + routing, allowed only) → context
+  from the user's visible schema → LLM `QueryPlan` → server validation (`assert_allowed` + visible-schema
+  membership; one re-plan with feedback) → ValueSearch canonical values → template DAX (LLM DAX only for
+  `custom`) → DAX validator → execute as the user → repair ≤ 2 → deterministic facts → answer with numeric
+  grounding check (template fallback) → persisted turn.
+- `AgentEvent` stream (status/token/table/clarification/error/done) for Phase 9 SSE.
+- LLM: one OpenAI-compatible provider for Groq/OpenAI (`LLM_MODEL=openai/gpt-oss-120b`), `complete_json` with
+  pydantic validation + one corrective retry. Without a key the app still starts outside prod.
+- Fiscal periods April–March (Q13c). `dev_synthetic` gateway (local/test only). `app.jobs.ask` dev CLI.
+- **Bugs fixed:**
+  - the DAX validator read `ORDER BY [x]` as table `BY`;
+  - retry counts of 0 silently fell back to 2.
+- 325 tests pass, including pipeline tests for scenarios 6, 7, 12, 16 and 17, repair and failure paths. Verified
+  live in dev mode with real fastembed retrieval: Finance never reached the planner, correct April–March DAX,
+  grounded answer.
+
+**Not verified yet:** answer quality with the real `openai/gpt-oss-120b` (needs `GROQ_API_KEY`; run
+`pytest -m network -k groq` and `app.jobs.ask`). Real Power BI is spike S3.
 
 ---
 
@@ -781,6 +802,7 @@ tool layer, not HTTP routes exposed to the visual.
 | Q15 | Authorization cache: **allowed 10 min, denied 2 min** (Q15b). A denial for an explicitly requested model is always re-checked live. Configurable in `.env` (ADR 0005). |
 | Q16 | **Generic denials.** The restricted model is never named. Unknown, disabled and forbidden models look identical (ADR 0005). |
 | Q10 | Business meaning comes from the **Power BI semantic model only**, with no CSV import for now (Q10a). Sync **on use + admin CLI** (Q10b). Local embeddings via **fastembed** (Q10c). ADR 0007. |
+| Q13 | **Fixed pipeline in plain Python.** The LLM never calls tools; it returns validated plans/DAX repairs and wording (ADR 0008). Default `openai/gpt-oss-120b` on Groq (Q13b). FY April–March (Q13c). |
 | Q7b | **Cross-model questions in v1.** The agent routes among the other models the user is authorized for, queries each separately, and combines the results. If any required model is denied, the whole request is denied. |
 
 ### 12.2 Remaining questions
@@ -793,7 +815,6 @@ before Phase 1; the others are asked before the phase that needs them.
 | Q5 | Hosting target for backend: Azure Container Apps / App Service / AKS / on-prem? | Phase 13 |
 | Q11 | Scale: number of users, expected concurrency, number of models (≈50?), languages (English only?) | Phase 12 |
 | Q12 | Must Teams or Power BI Embedded be supported? (Auth API doesn't support them.) | Architecture |
-| Q13 | Agent framework: plain SDK tool loop (recommended for control), LangGraph, Semantic Kernel, or other? | Phase 8 |
 | Q14 | Frontend stack inside the visual: plain TS + lightweight DOM, or React? | Phase 10 |
 
 ---
