@@ -38,9 +38,14 @@ docker compose -f infra/docker-compose.yml up -d --wait
 cd backend
 uv sync
 uv run alembic upgrade head
-uv run uvicorn app.main:app --reload --port 8000
+uv run uvicorn app.main:create_app --factory --reload --port 8000
 #   GET http://localhost:8000/api/v1/health        -> liveness
 #   GET http://localhost:8000/api/v1/health/ready  -> database connectivity
+#   GET http://localhost:8000/api/v1/session       -> signed-in user (needs a bearer token)
+
+# Until IT delivers the Entra app registration, use AUTH_PROVIDER=dev (local only):
+uv run python -m scripts.mint_dev_token --oid user-a --name "User A"
+#   then: curl -H "Authorization: Bearer <token>" http://localhost:8000/api/v1/session
 
 # 4. Quality checks
 uv run ruff check . && uv run ruff format --check . && uv run mypy && uv run pytest
@@ -56,6 +61,7 @@ npx pbiviz package      # -> visual/dist/*.pbiviz
 
 | Setting | Values |
 |---|---|
+| `AUTH_PROVIDER` | `entra` (real Power BI SSO), `dev` (local only, refused in dev/prod environments) |
 | `LLM_PROVIDER` | `groq`, `openai` |
 | `EMBEDDING_PROVIDER` | `local`, `openai` (changing it requires a vector re-index) |
 | `POWERBI_GATEWAY` / `POWERBI_FALLBACK_GATEWAY` | `fabric_iq_mcp`, `rest` |

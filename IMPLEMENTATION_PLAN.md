@@ -5,7 +5,7 @@
 
 | Item | Value |
 |---|---|
-| Status | **Phase 1 (project setup) DONE 2026-10-06.** Next: Phase 0 admin prerequisites + Phase 2 spikes, each awaiting approval |
+| Status | **Phases 1 and 3 DONE 2026-10-06.** Phase 0 is with IT (docs/entra-setup.md). Phase 2 waits on IT. Next candidate: Phase 4 |
 | Last research pass | 2026-10-06 (Microsoft Learn docs verified, see §13) |
 | Approval model | Each phase is implemented only after explicit approval. Nothing beyond the current approved phase is built. |
 
@@ -122,7 +122,7 @@ installs an AppSource visual could obtain a valid token for our audience.
   (wildcard subdomains allowed). The admin must allow it too.
 - New tabs only via `host.launchUrl()` (http/https only). No interactive OAuth popups/redirects inside the visual,
   which is why SSO via the Authentication API matters.
-- **Likely gap (to verify in spike):** the visual API does not directly expose the **report ID / semantic model ID**
+- **Confirmed gap (resolved by Q7 = hybrid):** the visual API does not directly expose the **report ID / semantic model ID**
   it's placed on. Candidate solutions: the report author sets the model in the visual's format pane, or the model is
   resolved from bound fields. Filters applied to the visual arrive implicitly through the `dataView`, not as filter
   definitions. See Q7.
@@ -460,7 +460,7 @@ Acceptance: spike report `docs/spikes.md` with findings. Plan updated if any ass
 
 ---
 
-### Phase 3 — Backend foundation & authentication ⛔
+### Phase 3 — Backend foundation & authentication ✅ DONE 2026-10-06
 **Goal:** Production-grade request pipeline up to "we know exactly who is asking".
 
 Tasks:
@@ -474,6 +474,25 @@ Tasks:
 
 Tests: scenarios 10, 13, 14, 22. Token fixtures signed with a test key.
 Acceptance: all auth tests green. Invalid tokens never reach business code.
+
+**Delivered:**
+- `AuthProvider` adapter with two implementations:
+  - `EntraAuthProvider`: RS256 only; JWKS cache with rollover and refetch rate-limit; v1 and v2 tokens; audience
+    = App ID URI or client ID; tenant allow-list before the issuer check; requesting client must be Power BI
+    Web/Desktop/Mobile; required `_CV_ForPBI` scope.
+  - `DevAuthProvider`: HS256, local/test environments only, used until IT delivers.
+- `OboTokenBroker`: MSAL, exchange in the user's own tenant, per-user cache, typed errors (`consent_required`,
+  `interaction_required`, `token_exchange_failed`).
+- Uniform error envelope with correlation ID. Pure-ASGI middleware (SSE-safe) for correlation ID, security headers
+  and body-size limit. CORS allows `Origin: null` (sandboxed visual) without credentials. `GET /api/v1/session`.
+- The app factory fails fast at startup on misconfiguration. 72 tests pass. Verified live in dev mode and against
+  Entra's real JWKS.
+
+**Carried forward:**
+- Scenario 22 (session hijack) needs the `chat_sessions` table, so it moves to Phase 4 (ownership by
+  `tenant_id:object_id`) and Phase 9.
+- The exact `Origin` value sent by the visual sandbox is confirmed in spike S6.
+- Live Entra token validation and OBO are confirmed in spikes S1/S2 once IT delivers.
 
 ---
 
@@ -541,7 +560,12 @@ Components:
   `get_current_context`, `get_accessible_models`, `get_model_schema`, `search_semantic_knowledge`, `search_values`,
   `resolve_metric`, `resolve_dimension`, `resolve_filter`, `resolve_date`, `build_query`, `validate_query`,
   `execute_query`, `analyze_result`.
-- **Planner** → structured intent JSON (`intent`, `model`, `metrics`, `dimensions`, `filters`, `time`, `compare`).
+- **Model router (Q7b)**: starts from the Format-pane primary model. When the question references other domains, it
+  picks candidate models from the **user's allowed set only**, using per-model domain summaries in the registry/vector
+  store. If a referenced domain resolves to a non-allowed model, the request is denied.
+- **Planner** → structured intent JSON (`intent`, `models[]`, `metrics`, `dimensions`, `filters`, `time`, `compare`).
+  For multi-model plans: one sub-query per model, all authorized **before** any execution, then a combine step
+  (aligned on shared dimensions such as date/period). Each figure is labelled with its source model and refresh time.
 - **DAX builder** (template-first for common intents, LLM-assisted for complex ones) and **validator** (parse; `EVALUATE`
   only; objects ⊆ user schema; no `INFO.*`/DMV; enforce TOPN/limits).
 - **Repair loop**: max N retries on validation/query error, then honest failure message.
@@ -577,7 +601,8 @@ Acceptance: end-to-end question from curl with a valid test token returns a stre
 
 Tasks:
 - Auth bootstrap: `acquireAADTokenstatus()` → state machine with UI for each status; token refresh before expiry.
-- Context capture per Q7 (format-pane model selection and/or data-bound fields).
+- Context capture per Q7: Format-pane **primary model dropdown** (filled from `GET /api/v1/models/accessible`), and an
+  optional **"Context fields"** data role whose filtered values are sent as filter context.
 - Chat UI: message list, streaming render, table rendering, markdown-safe output (no raw HTML injection), stop button,
   new chat, error banners with actionable text (no access / needs Build / admin disabled / unsupported host).
 - `fetch`-based SSE reader. Retry/backoff. Accessibility (keyboard, high contrast). Theme follows report theme.
@@ -657,6 +682,9 @@ tool layer, not HTTP routes exposed to the visual.
 | Q3 | **Both query paths behind `PowerBIGateway`:** Fabric IQ MCP primary, Execute Queries REST fallback, selectable via `.env`. |
 | Q4 | **pgvector** inside the same PostgreSQL. |
 | Q8 | **uv + Python 3.12**, Node LTS for pbiviz, local `git init` (remote TBD). |
+| Q6 | **Company work tenant. IT provides** the app registration, admin consent, tenant settings and custom domain. Request: [docs/entra-setup.md](docs/entra-setup.md). Development continues with mocks until IT delivers. Live spikes wait on IT. |
+| Q7 | **Hybrid model context:** the report author picks the primary model in the Format pane (dropdown of models they can access). Optional bound fields supply slicer/filter context. |
+| Q7b | **Cross-model questions in v1.** The agent routes among the other models the user is authorized for, queries each separately, and combines the results. If any required model is denied, the whole request is denied. |
 
 ### 12.2 Remaining questions
 
@@ -665,14 +693,7 @@ before Phase 1; the others are asked before the phase that needs them.
 
 | # | Question | Blocks |
 |---|---|---|
-| Q1 | Production distribution: **AppSource** (SSO works) or **private/organizational visual** (needs device-code auth)? | Architecture |
-| Q2 | LLM provider and hosting (Azure OpenAI / Anthropic Claude via API, Azure AI Foundry or Bedrock / other)? Data-residency constraints? Embedding model? | **[blocks setup]** deps |
-| Q3 | Primary Power BI query path: Fabric IQ MCP (recommended), Execute Queries REST, or both? Is the tenant home region Fabric-enabled? Capacity type (Pro/PPU/Premium/Fabric F-SKU)? | Phase 2/6 |
-| Q4 | Vector store: pgvector (recommended) / Azure AI Search / Qdrant / other? | **[blocks setup]** compose |
 | Q5 | Hosting target for backend: Azure Container Apps / App Service / AKS / on-prem? | Phase 13 |
-| Q6 | Can you (or an admin) create Entra app registrations, grant admin consent and change Power BI tenant settings? Do you have a **verified custom domain** for the App ID URI? Commercial cloud only? | Phase 0/2 |
-| Q7 | How should the visual know its semantic model: one model per report (author configures in format pane), or the bot can route across all models the user can access? Is cross-model comparison required in v1? | Phase 2/8/10 |
-| Q8 | Tooling: Python version + package manager (uv / poetry / pip), Node version, and should I `git init` (and is there a remote, e.g., GitHub/Azure DevOps)? | **[blocks setup]** |
 | Q9 | Conversation/audit retention period. May questions, DAX, and results be stored? PII rules? | Phase 4 |
 | Q10 | Source of business glossary/synonyms (model descriptions, Excel/CSV, Copilot "Prep data for AI" metadata, SMEs)? Which identity runs metadata sync? | Phase 7 |
 | Q11 | Scale: number of users, expected concurrency, number of models (≈50?), languages (English only?) | Phase 12 |

@@ -1,9 +1,8 @@
 import logging
 
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, Request, Response, status
 from sqlalchemy import text
 
-from app.core.config import get_settings
 from app.db.session import get_engine
 
 logger = logging.getLogger(__name__)
@@ -12,9 +11,9 @@ router = APIRouter(tags=["health"])
 
 
 @router.get("/health")
-async def health() -> dict[str, str]:
+async def health(request: Request) -> dict[str, str]:
     """Liveness: the process is up. Never touches dependencies."""
-    settings = get_settings()
+    settings = request.app.state.settings
     return {"status": "ok", "service": settings.app_name, "environment": settings.environment}
 
 
