@@ -21,6 +21,9 @@ Tokens are never written anywhere. Only an anonymized copy of the schema is comm
 
 ---
 
+> **Running in Docker** ([run-locally.md](run-locally.md))? Skip steps 1 and 5: the containers provide HTTPS and
+> the visual dev server. Run the admin commands with `docker exec discover-chatbot-backend-1 python -m ...`.
+
 ## 1. Install the tools (once)
 
 ```powershell

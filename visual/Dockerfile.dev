@@ -1,0 +1,16 @@
+# Visual dev server (`pbiviz start`) for Power BI's Developer visual (docs/run-locally.md).
+# Serves the visual as configured on the host by `npm run configure`; rebuild after changes.
+FROM node:22-bookworm
+
+RUN npm install --global powerbi-visuals-tools@7.2.1
+
+WORKDIR /visual
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+
+EXPOSE 8080
+
+# pbiviz reads its HTTPS certificate from ~/pbiviz-certs (mounted by docker-compose).
+CMD ["pbiviz", "start"]

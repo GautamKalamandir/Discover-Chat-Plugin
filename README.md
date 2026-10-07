@@ -104,6 +104,11 @@ npx pbiviz package      # -> visual/dist/*.pbiviz
 4. Before packaging for real use: `npm run configure -- --api https://<backend> --app-id-uri https://<App ID URI>`
    (production SSO build; the dev sign-in code path is not used).
 
+### Whole stack in Docker
+
+`docker compose -f infra/docker-compose.yml --profile app up -d --build` runs Postgres, the backend (HTTPS :8000)
+and the visual dev server (HTTPS :8080). One-time setup: [docs/run-locally.md](docs/run-locally.md).
+
 ### Live verification on your tenant (Phase 2 spikes)
 
 Follow [docs/spikes-runbook.md](docs/spikes-runbook.md). In short:

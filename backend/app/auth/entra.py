@@ -12,12 +12,22 @@ import jwt
 from app.auth.base import AuthProvider
 from app.auth.jwks import JwksKeySource, SigningKeySource
 from app.auth.models import AuthenticatedUser
-from app.core.config import Settings
+from app.core.config import Environment, Settings
 from app.core.errors import AppError, ConfigurationError, ErrorCode
 
 logger = logging.getLogger(__name__)
 
 _INVALID = "The access token is not valid."
+
+
+def accepted_scopes(settings: Settings) -> frozenset[str]:
+    """The visual's scope. Outside production also its developer-visual variant: `pbiviz start`
+    serves the visual as `<guid>_DEBUG`, so Power BI asks Entra for `<guid>_DEBUG_CV_ForPBI`."""
+    scope = settings.entra_required_scope or ""
+    scopes = {scope}
+    if settings.environment is not Environment.PROD and scope.endswith("_CV_ForPBI"):
+        scopes.add(scope.removesuffix("_CV_ForPBI") + "_DEBUG_CV_ForPBI")
+    return frozenset(scopes)
 
 
 def _unauthorized(code: ErrorCode, detail: str, message: str = _INVALID) -> AppError:
@@ -58,7 +68,7 @@ class EntraAuthProvider(AuthProvider):
         self._audiences = [app_id_uri.rstrip("/"), client_id]
         self._allowed_tenants = {t.lower() for t in settings.entra_allowed_tenant_ids}
         self._allowed_clients = {c.lower() for c in settings.entra_allowed_client_app_ids}
-        self._required_scope = settings.entra_required_scope
+        self._accepted_scopes = accepted_scopes(settings)
         self._authority = settings.entra_authority_host.rstrip("/")
         self._leeway = settings.jwt_leeway_seconds
         self._keys = key_source or JwksKeySource(settings.entra_jwks_url)
@@ -133,11 +143,11 @@ class EntraAuthProvider(AuthProvider):
             )
 
         scopes = frozenset(str(claims.get("scp", "")).split())
-        if self._required_scope not in scopes:
+        if not scopes & self._accepted_scopes:
             raise _forbidden(
                 ErrorCode.INSUFFICIENT_SCOPE,
                 "The access token does not grant access to the chatbot.",
-                f"Required scope {self._required_scope!r} missing from {sorted(scopes)}",
+                f"Required scope {sorted(self._accepted_scopes)!r} missing from {sorted(scopes)}",
             )
 
         return AuthenticatedUser(

@@ -8,10 +8,19 @@ import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
 from httpx import AsyncClient
 
-from app.core.config import POWERBI_DESKTOP_CLIENT_ID
-from tests.conftest import APP_ID_URI, CLIENT_ID, OTHER_TENANT_ID, TENANT_ID, TokenFactory
+from app.auth.entra import accepted_scopes
+from app.core.config import POWERBI_DESKTOP_CLIENT_ID, Environment, Settings
+from tests.conftest import (
+    APP_ID_URI,
+    CLIENT_ID,
+    OTHER_TENANT_ID,
+    SCOPE,
+    TENANT_ID,
+    TokenFactory,
+)
 
 SESSION = "/api/v1/session"
+DEBUG_SCOPE = SCOPE.removesuffix("_CV_ForPBI") + "_DEBUG_CV_ForPBI"
 
 
 def bearer(token: str) -> dict[str, str]:
@@ -216,3 +225,21 @@ async def test_token_without_required_scope_is_forbidden(
     client: AsyncClient, make_token: TokenFactory, scope: str | None
 ) -> None:
     await assert_error(client, bearer(make_token(scp=scope)), 403, "insufficient_scope")
+
+
+async def test_developer_visual_scope_is_accepted_outside_production(
+    client: AsyncClient, make_token: TokenFactory
+) -> None:
+    # `pbiviz start` serves the visual as <guid>_DEBUG, so Power BI requests this scope.
+    response = await client.get(SESSION, headers=bearer(make_token(scp=DEBUG_SCOPE)))
+
+    assert response.status_code == 200
+
+
+def test_developer_visual_scope_is_never_accepted_in_production(
+    entra_settings: Settings,
+) -> None:
+    prod = entra_settings.model_copy(update={"environment": Environment.PROD})
+
+    assert accepted_scopes(prod) == {SCOPE}
+    assert accepted_scopes(entra_settings) == {SCOPE, DEBUG_SCOPE}

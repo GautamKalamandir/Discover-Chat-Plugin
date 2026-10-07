@@ -48,7 +48,11 @@ Then:
 - Add a scope named **`discoverChatBot09E811F9CAF94C58AD6EEF5D7849A3F7_CV_ForPBI`**, with "Who can consent" set to
   *Admins and users*. This name is 57 characters and the portal form allows only 40, so set it in the
   **Manifest** (`api.oauth2PermissionScopes[].value`) as Microsoft's documentation describes.
-- **Authorized client applications.** Add each of these Microsoft Power BI app IDs and tick the scope above:
+- **Development / test registrations only:** add a second scope,
+  **`discoverChatBot09E811F9CAF94C58AD6EEF5D7849A3F7_DEBUG_CV_ForPBI`**, with the same settings. Power BI's Developer
+  visual serves the visual as `<guid>_DEBUG` and requests this scope. The backend accepts it only outside production.
+  Don't add it to the production registration.
+- **Authorized client applications.** Add each of these Microsoft Power BI app IDs and tick the scope(s) above:
 
 | Power BI client | Application (client) ID |
 |---|---|

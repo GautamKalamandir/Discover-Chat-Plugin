@@ -70,13 +70,13 @@
             "name": "WebAccess",
             "essential": true,
             "parameters": [
-                "https://chatbot-api.example.com"
+                "https://localhost:8000"
             ]
         },
         {
             "name": "AADAuthentication",
             "parameters": {
-                "COM": "https://chatbot-api.example.com"
+                "COM": "https://chatbot-api.kalamandirltd.com"
             }
         },
         {

@@ -34,3 +34,6 @@ Thumbs.db
 
 # Phase 2 spike captures (real tenant metadata/error texts): never committed
 backend/spikes/captures/
+
+# Local HTTPS certificate for the Docker dev stack (docs/run-locally.md)
+infra/dev-certs/
