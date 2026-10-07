@@ -75,6 +75,57 @@
     }
   }
 
+  // Phase 2 diagnostics builds only.
+  .diagnostics {
+    margin: 8px 12px 0;
+    padding: 6px 10px;
+    border: 1px dashed var(--fg);
+    border-radius: 4px;
+    max-height: 45%;
+    overflow-y: auto;
+    font-size: 12px;
+
+    summary {
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    p {
+      margin: 4px 0;
+    }
+
+    .diag-controls {
+      display: flex;
+      gap: 6px;
+
+      input {
+        flex: 1;
+        min-width: 0;
+      }
+    }
+
+    .diag-steps {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+
+      th,
+      td {
+        text-align: left;
+        padding: 2px 4px;
+        border-bottom: 1px solid fade(#888, 30%);
+      }
+
+      tr.failed td {
+        color: #d13438;
+      }
+
+      tr.skipped td {
+        opacity: 0.6;
+      }
+    }
+  }
+
   .messages {
     flex: 1;
     overflow-y: auto;

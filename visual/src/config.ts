@@ -3,7 +3,9 @@
 
 export type AuthMode = "entra" | "dev";
 
-export const config: { apiBaseUrl: string; authMode: AuthMode } = {
+export const config: { apiBaseUrl: string; authMode: AuthMode; diagnostics: boolean } = {
     apiBaseUrl: "https://chatbot-api.example.com",
     authMode: "entra",
+    // Phase 2 spike panel (docs/spikes-runbook.md); always false in builds that are shipped.
+    diagnostics: false,
 };

@@ -60,3 +60,20 @@ export class ApiError extends Error {
         this.name = "ApiError";
     }
 }
+
+/** POST /api/v1/diagnostics/run (Phase 2 spikes). */
+export interface DiagnosticsStep {
+    spike: string;
+    name: string;
+    status: "ok" | "failed" | "skipped";
+    duration_ms: number;
+    detail: Record<string, unknown>;
+    error: string | null;
+}
+
+export interface DiagnosticsSummary {
+    bundle_id: string;
+    model_id: string;
+    sample_dax: string;
+    steps: DiagnosticsStep[];
+}

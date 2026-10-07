@@ -7,13 +7,15 @@ import { createRoot, Root } from "react-dom/client";
 import "./../style/visual.less";
 
 import { ApiClient } from "./api/client";
-import { ModelOption } from "./api/types";
+import { ModelOption, ReportFilter } from "./api/types";
 import { DevTokenProvider, EntraTokenProvider, TokenProvider } from "./auth/tokenProvider";
 import { config } from "./config";
 import { reportFilters } from "./context/reportFilters";
+import { dataViewSummary, filterSummary } from "./diagnostics/report";
 import { VisualFormattingSettingsModel } from "./settings";
 import { VisualConversationStore } from "./storage";
 import { App, Theme } from "./ui/App";
+import { DiagnosticsContext } from "./ui/DiagnosticsPanel";
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
@@ -67,12 +69,14 @@ export class Visual implements IVisual {
                 this.tokens.setUser(String(this.formattingSettings.developer.devUser.value ?? ""));
             }
 
+            const filters = reportFilters(dataView);
             this.root.render(
                 React.createElement(App, {
                     client: this.client,
                     conversations: this.conversations,
                     modelId: this.modelId,
-                    reportFilters: reportFilters(dataView),
+                    reportFilters: filters,
+                    diagnostics: config.diagnostics ? this.diagnostics(dataView, filters) : undefined,
                     title: String(this.formattingSettings.appearance.title.value ?? ""),
                     theme: this.theme(),
                     onModels: this.onModels,
@@ -97,6 +101,25 @@ export class Visual implements IVisual {
         this.models = models;
         this.formattingSettings.applyModelChoice(models, this.modelId);
     };
+
+    /** Phase 2 (S5): what Power BI gives the visual, as structure and counts only. */
+    private diagnostics(dataView: DataView | undefined, filters: ReportFilter[]): DiagnosticsContext {
+        const tokens = this.tokens;
+        return {
+            tokenStatus: () => (tokens instanceof EntraTokenProvider ? tokens.describe() : null),
+            visualReport: {
+                host: {
+                    hostEnv: (this.host as { hostEnv?: unknown }).hostEnv ?? null,
+                    locale: this.host.locale ?? null,
+                    userAgent: navigator.userAgent,
+                },
+                savedObjects: dataView?.metadata?.objects ?? null,
+                savedModelId: this.modelId,
+                dataView: dataViewSummary(dataView),
+                reportFilters: filterSummary(filters),
+            },
+        };
+    }
 
     private theme(): Theme {
         const palette = this.host.colorPalette;

@@ -110,6 +110,54 @@ class FabricIqMcpGateway(PowerBIGateway):
         )
         return GatewayPayload(data=_payload_from_result(result), gateway=self.name)
 
+    # --- diagnostics (Phase 2 spikes) -----------------------------------------------------------
+
+    async def list_tools(self, user_token: str) -> list[dict[str, Any]]:
+        """The live tool contract: names, descriptions and input schemas."""
+        try:
+            async with self._session(user_token) as session:
+                tools = (await session.list_tools()).tools
+        except Exception as exc:
+            raise _classify_transport_error(exc) from exc
+        return [
+            {"name": t.name, "description": t.description, "input_schema": t.input_schema}
+            for t in tools
+        ]
+
+    async def call_raw(
+        self, user_token: str, tool: str, arguments: dict[str, Any]
+    ) -> dict[str, Any]:
+        """One tool call, described as returned (content types, structured content, error flag)
+        plus how our classifier would read an error. Used to capture the real formats."""
+        try:
+            async with self._session(user_token) as session:
+                result = await session.call_tool(
+                    tool, arguments, read_timeout_seconds=self._timeout
+                )
+        except Exception as exc:
+            raise _classify_transport_error(exc) from exc
+        if not isinstance(result, CallToolResult):
+            return {"unexpected_result_type": type(result).__name__}
+        content = []
+        for item in result.content:
+            entry: dict[str, Any] = {"type": type(item).__name__}
+            if isinstance(item, TextContent):
+                entry["text"] = item.text
+            elif isinstance(item, EmbeddedResource):
+                resource = item.resource
+                entry["mime_type"] = getattr(resource, "mime_type", None)
+                entry["uri"] = str(getattr(resource, "uri", ""))
+                entry["text"] = getattr(resource, "text", None)
+            content.append(entry)
+        described: dict[str, Any] = {
+            "is_error": bool(result.is_error),
+            "content": content,
+            "structured_content": result.structured_content,
+        }
+        if result.is_error:
+            described["classified_as"] = type(_classify_tool_error(_text_of(result))).__name__
+        return described
+
     # --- MCP plumbing ---------------------------------------------------------------------------
 
     def _session(self, user_token: str) -> AbstractAsyncContextManager[ClientSession]:

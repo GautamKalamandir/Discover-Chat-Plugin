@@ -2,6 +2,7 @@ import { TokenProvider } from "../auth/tokenProvider";
 import { readSse } from "./sse";
 import {
     ApiError,
+    DiagnosticsSummary,
     ModelOption,
     ReportFilter,
     SessionDetail,
@@ -44,6 +45,32 @@ export class ApiClient {
 
     async deleteSession(sessionId: string): Promise<void> {
         await this.request("DELETE", `/api/v1/chat/sessions/${encodeURIComponent(sessionId)}`);
+    }
+
+    // --- Phase 2 diagnostics (only called by the diagnostics build; docs/spikes-runbook.md) ---
+
+    async diagnosticsRun(modelId: string, valueTerm?: string): Promise<DiagnosticsSummary> {
+        return this.json("POST", "/api/v1/diagnostics/run", {
+            model_id: modelId,
+            value_term: valueTerm || null,
+        });
+    }
+
+    /** S6: yields each event's arrival time (ms since the request started). */
+    async *diagnosticsStream(now: () => number = () => performance.now()): AsyncGenerator<number> {
+        const started = now();
+        const response = await this.request("GET", "/api/v1/diagnostics/stream");
+        if (!response.body) throw new ApiError(0, "no_stream", "The answer could not be streamed.");
+        for await (const frame of readSse(response.body)) {
+            if (frame.event === "tick") yield Math.round(now() - started);
+        }
+    }
+
+    async diagnosticsVisualReport(
+        bundleId: string | null,
+        report: Record<string, unknown>,
+    ): Promise<{ bundle_id: string }> {
+        return this.json("POST", "/api/v1/diagnostics/visual", { bundle_id: bundleId, report });
     }
 
     /** Streams one turn. Aborting `signal` closes the connection, so the backend cancels the turn. */

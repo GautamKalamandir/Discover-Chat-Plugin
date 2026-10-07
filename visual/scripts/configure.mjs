@@ -2,6 +2,7 @@
 //
 //   npm run configure -- --api https://chatbot-api.contoso.com --app-id-uri https://chatbot-api.contoso.com
 //   npm run configure -- --mode dev --api https://localhost:8000          (local development)
+//   ... --diagnostics on    adds the Phase 2 diagnostics panel (docs/spikes-runbook.md); never ship it
 //
 // The backend URL is fixed at build time on purpose: report authors can't point the visual (and the
 // user's token) at another server, and WebAccess only allows the declared origin anyway.
@@ -23,6 +24,10 @@ if (!["entra", "dev"].includes(mode)) throw new Error(`--mode must be entra or d
 const api = new URL(args.api ?? "https://chatbot-api.example.com");
 if (api.protocol !== "https:") throw new Error("--api must be https:// (Power BI blocks mixed content)");
 const appIdUri = args["app-id-uri"] ?? api.origin;
+const diagnostics = (args.diagnostics ?? "off") === "on";
+if (!["on", "off", undefined].includes(args.diagnostics)) {
+    throw new Error(`--diagnostics must be on or off, got ${args.diagnostics}`);
+}
 
 writeFileSync(
     join(root, "src", "config.ts"),
@@ -31,9 +36,11 @@ writeFileSync(
 
 export type AuthMode = "entra" | "dev";
 
-export const config: { apiBaseUrl: string; authMode: AuthMode } = {
+export const config: { apiBaseUrl: string; authMode: AuthMode; diagnostics: boolean } = {
     apiBaseUrl: ${JSON.stringify(api.origin)},
     authMode: ${JSON.stringify(mode)},
+    // Phase 2 spike panel (docs/spikes-runbook.md); always false in builds that are shipped.
+    diagnostics: ${diagnostics},
 };
 `,
 );
@@ -47,4 +54,4 @@ capabilities.privileges = [
 ];
 writeFileSync(capabilitiesPath, JSON.stringify(capabilities, null, 4) + "\n");
 
-console.log(`configured: mode=${mode} api=${api.origin} appIdUri=${appIdUri}`);
+console.log(`configured: mode=${mode} api=${api.origin} appIdUri=${appIdUri} diagnostics=${diagnostics}`);

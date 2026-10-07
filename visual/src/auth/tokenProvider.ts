@@ -30,12 +30,21 @@ export interface TokenProvider {
     getToken(forceRefresh?: boolean): Promise<string>;
 }
 
+/** What the diagnostics panel may show about sign-in: status and expiry, never the token. */
+export interface TokenStatus {
+    privilegeStatus: number | null;
+    expiresAt: number | null;
+    error: AuthProblem | null;
+}
+
 const REFRESH_MARGIN_MS = 2 * 60 * 1000;
 
 /** Power BI SSO (Q1): the token of the user signed in to Power BI, for our backend's audience. */
 export class EntraTokenProvider implements TokenProvider {
     private cached: { token: string; expiresAt: number } | null = null;
     private pending: Promise<string> | null = null;
+    private lastStatus: number | null = null;
+    private lastError: AuthProblem | null = null;
 
     constructor(
         private readonly service: IAcquireAADTokenService,
@@ -52,8 +61,28 @@ export class EntraTokenProvider implements TokenProvider {
         return this.pending;
     }
 
+    describe(): TokenStatus {
+        return {
+            privilegeStatus: this.lastStatus,
+            expiresAt: this.cached?.expiresAt ?? null,
+            error: this.lastError,
+        };
+    }
+
     private async acquire(): Promise<string> {
+        try {
+            const token = await this.acquireOnce();
+            this.lastError = null;
+            return token;
+        } catch (e) {
+            this.lastError = e instanceof AuthUnavailableError ? e.problem : "sign_in_failed";
+            throw e;
+        }
+    }
+
+    private async acquireOnce(): Promise<string> {
         const status = (await this.service.acquireAADTokenstatus()) as number;
+        this.lastStatus = status;
         if (status === PRIVILEGE_NOT_SUPPORTED) throw new AuthUnavailableError("not_supported");
         if (status === PRIVILEGE_DISABLED_BY_ADMIN) throw new AuthUnavailableError("disabled_by_admin");
         if (status === PRIVILEGE_NOT_DECLARED) throw new AuthUnavailableError("not_declared");

@@ -262,6 +262,10 @@ class Settings(BaseSettings):
     agent_context_docs: int = DEFAULT_AGENT_CONTEXT_DOCS
     fiscal_year_start_month: int = DEFAULT_FISCAL_YEAR_START_MONTH
 
+    # --- Phase 2 spikes: live diagnostics (never in production; docs/spikes-runbook.md) ---
+    diagnostics_enabled: bool = False
+    diagnostics_capture_dir: str = "spikes/captures"
+
     # --- Chat API (ADR 0009). Missing/invalid values fall back to the defaults. ---
     chat_turn_timeout_seconds: int = DEFAULT_CHAT_TURN_TIMEOUT_SECONDS
     chat_questions_per_minute: int = DEFAULT_CHAT_QUESTIONS_PER_MINUTE
@@ -314,6 +318,12 @@ class Settings(BaseSettings):
     # Only needed for OpenAI-compatible models not in the built-in dimension table.
     openai_embedding_dimensions: int | None = None
 
+    @field_validator("openai_embedding_dimensions", mode="before")
+    @classmethod
+    def _optional_int(cls, value: object) -> object:
+        # "OPENAI_EMBEDDING_DIMENSIONS=" (left empty in .env) means "not set".
+        return None if isinstance(value, str) and not value.strip() else value
+
     # --- Semantic knowledge / retrieval (ADR 0007) ---
     retrieval_top_k: int = DEFAULT_RETRIEVAL_TOP_K
     retrieval_candidates: int = DEFAULT_RETRIEVAL_CANDIDATES
@@ -340,6 +350,8 @@ def production_problems(settings: Settings) -> list[str]:
         problems.append("ENTRA_ALLOWED_TENANT_IDS must not be empty")
     if settings.dev_auth_secret is not None or settings.dev_model_access:
         problems.append("DEV_AUTH_SECRET / DEV_MODEL_ACCESS must not be set")
+    if settings.diagnostics_enabled:
+        problems.append("DIAGNOSTICS_ENABLED must be false")
     if settings.log_level.upper() == "DEBUG":
         problems.append("LOG_LEVEL must not be DEBUG")
     return problems

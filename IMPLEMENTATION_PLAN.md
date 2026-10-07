@@ -5,7 +5,7 @@
 
 | Item | Value |
 |---|---|
-| Status | **Phases 1, 3–11 DONE (2026-10-07). Phase 12 DEFERRED.** Phase 0 is with IT (docs/entra-setup.md). Phase 2 waits on IT. Next candidate: Phase 13 (deployment, needs Q5) |
+| Status | **Phases 1, 3–11 DONE (2026-10-07). Phase 12 DEFERRED.** Phase 0 delivered by IT. **Phase 2 IN PROGRESS:** spike tooling built (Step 1); live runs next (docs/spikes-runbook.md), then analysis (Step 3) and the end-to-end test (Step 4) |
 | Last research pass | 2026-10-06 (Microsoft Learn docs verified, see §13) |
 | Approval model | Each phase is implemented only after explicit approval. Nothing beyond the current approved phase is built. |
 
@@ -457,6 +457,24 @@ Acceptance: `docker compose up` → DB healthy. Backend `GET /api/v1/health` →
 | S7 (conditional) | Device-code fallback, only if Q1 = private visual | Login via `launchUrl` works, CA policy permits |
 
 Acceptance: spike report `docs/spikes.md` with findings. Plan updated if any assumption fails.
+
+**Approach (approved 2026-10-07):** the spikes run through the production code path instead of throwaway scripts.
+1. **Step 1, spike tooling ✅ 2026-10-07:**
+   - `app.jobs.check_config`: read-only preflight; never prints secrets.
+   - Diagnostics API `/api/v1/diagnostics/{run,stream,visual}`:
+     - only when `DIAGNOSTICS_ENABLED=true` outside production; refused by the production guard;
+     - real sign-in required;
+     - local, gitignored capture bundles: no tokens, row values masked, bundles owned per user.
+   - Visual diagnostics panel (`configure --diagnostics on`).
+   - `app.jobs.anonymize_capture` for committed fixtures.
+   - Tests: 15 backend, 9 visual.
+   - The token-canary test caught one leak during development (an unexpectedly successful "invalid DAX" result was
+     saved unmasked); it is fixed.
+2. **Step 2:** the user runs `docs/spikes-runbook.md` (Service as normal, non-Build and RLS users; Context fields;
+   Desktop).
+3. **Step 3:** analyse the bundles, write `docs/spikes.md`, adapt the normalizer, parsers and error classification to
+   the real formats, commit anonymized fixtures.
+4. **Step 4:** end-to-end checklist (`docs/e2e-checklist.md`) plus the full automated suites.
 
 ---
 

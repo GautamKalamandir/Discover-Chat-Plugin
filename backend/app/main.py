@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.agent.orchestrator import Agent
 from app.api.v1 import dev as dev_api
+from app.api.v1 import diagnostics as diagnostics_api
 from app.api.v1.router import api_router
 from app.auth.base import AuthProvider
 from app.auth.factory import create_auth_provider
@@ -139,6 +140,9 @@ def create_app(
     ):
         # Local development only: lets the dev build of the visual sign in (ADR 0010).
         app.include_router(dev_api.router, prefix="/api/v1")
+    if settings.diagnostics_enabled and not is_prod:
+        # Phase 2 spikes: live checks as the signed-in user (docs/spikes-runbook.md).
+        app.include_router(diagnostics_api.router, prefix="/api/v1")
 
     # Added innermost → outermost; the correlation id wraps everything so errors carry it.
     app.add_middleware(BodySizeLimitMiddleware, max_bytes=settings.max_request_body_bytes)

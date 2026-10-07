@@ -28,6 +28,8 @@ class FakeFabricIq:
     execute_mode: str = "json"  # json | csv | error:<message>
     endpoint_status: int | None = None  # e.g. 401 -> the whole endpoint refuses the caller
     omit_tools: set[str] = field(default_factory=set)
+    # A query containing a key fails with that key's message (e.g. an unknown measure).
+    dax_errors: dict[str, str] = field(default_factory=dict)
     requests: list[dict[str, str]] = field(default_factory=list)
     calls: list[tuple[str, dict[str, Any]]] = field(default_factory=list)
 
@@ -48,6 +50,9 @@ class FakeFabricIq:
                         {"artifactId": artifactId, "daxQueries": daxQueries, "maxRows": maxRows},
                     )
                 )
+                for marker, message in self.dax_errors.items():
+                    if any(marker in query for query in daxQueries):
+                        raise ToolError(message)
                 if self.execute_mode.startswith("error:"):
                     raise ToolError(self.execute_mode.removeprefix("error:"))
                 if self.execute_mode == "csv":

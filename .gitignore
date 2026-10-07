@@ -31,3 +31,6 @@ Thumbs.db
 
 # Downloaded embedding models
 .cache/
+
+# Phase 2 spike captures (real tenant metadata/error texts): never committed
+backend/spikes/captures/

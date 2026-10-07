@@ -104,6 +104,16 @@ npx pbiviz package      # -> visual/dist/*.pbiviz
 4. Before packaging for real use: `npm run configure -- --api https://<backend> --app-id-uri https://<App ID URI>`
    (production SSO build; the dev sign-in code path is not used).
 
+### Live verification on your tenant (Phase 2 spikes)
+
+Follow [docs/spikes-runbook.md](docs/spikes-runbook.md). In short:
+- `uv run python -m app.jobs.check_config` checks `.env`, Entra, the credential, Fabric IQ, Groq and the database
+  (read-only, never prints secrets);
+- `DIAGNOSTICS_ENABLED=true` plus `npm run configure -- ... --diagnostics on` add a **Diagnostics** panel that runs
+  spikes S1–S6 as the signed-in user and saves local, gitignored capture bundles;
+- `uv run python -m app.jobs.anonymize_capture <schema_payload.json> <fixture.json>` turns a captured schema into a
+  committable test fixture.
+
 ## Switchable providers (`.env`)
 
 | Setting | Values |

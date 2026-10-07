@@ -6,6 +6,7 @@ import { AuthUnavailableError, AUTH_MESSAGES } from "../auth/tokenProvider";
 import { chatReducer, initialState } from "../chat/store";
 import { ConversationStore } from "../storage";
 import { Composer, MessageView } from "./components";
+import { DiagnosticsContext, DiagnosticsPanel } from "./DiagnosticsPanel";
 
 export interface Theme {
     foreground: string;
@@ -22,6 +23,8 @@ export interface AppProps {
     title: string;
     theme: Theme;
     onModels?: (models: ModelOption[]) => void;
+    /** Only in diagnostics builds (config.diagnostics). */
+    diagnostics?: DiagnosticsContext;
 }
 
 function userMessage(error: unknown): string {
@@ -139,6 +142,9 @@ export function App(props: AppProps): React.JSX.Element {
                     </button>
                 </div>
             </header>
+            {props.diagnostics && (
+                <DiagnosticsPanel client={client} modelId={modelId} context={props.diagnostics} />
+            )}
             {authError ? (
                 <p className="banner error" role="alert">
                     {authError}
