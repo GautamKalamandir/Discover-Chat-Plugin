@@ -107,6 +107,7 @@ async def test_power_bi_not_answering_fails_closed_and_is_not_cached(env: Env) -
 # --- G2: explicit checks ------------------------------------------------------------------------
 
 
+@pytest.mark.scenario(1)
 async def test_scenario_1_allowed_model_passes_and_is_audited(env: Env) -> None:
     service, _, _, sm = env
     authz = await service.build_context(request_ctx())
@@ -117,6 +118,7 @@ async def test_scenario_1_allowed_model_passes_and_is_audited(env: Env) -> None:
     assert [(e.outcome, e.pbi_dataset_id) for e in events] == [(AuditOutcome.ALLOW, "sales-ds")]
 
 
+@pytest.mark.scenario(2)
 async def test_scenario_2_denied_model_gets_generic_message(env: Env) -> None:
     service, _, _, sm = env
     authz = await service.build_context(request_ctx())
@@ -130,6 +132,7 @@ async def test_scenario_2_denied_model_gets_generic_message(env: Env) -> None:
     assert (event.outcome, event.reason) == (AuditOutcome.DENY, "model_not_allowed")
 
 
+@pytest.mark.scenario(6)
 async def test_scenario_6_cross_model_request_is_denied_as_a_whole(env: Env) -> None:
     service, _, _, sm = env
     authz = await service.build_context(request_ctx())
@@ -146,6 +149,7 @@ async def test_scenario_6_cross_model_request_is_denied_as_a_whole(env: Env) -> 
 
 
 @pytest.mark.parametrize("dataset_id", ["does-not-exist", "draft-ds", "finance-ds"])
+@pytest.mark.scenario(11)
 async def test_scenario_11_unknown_disabled_and_forbidden_look_identical(
     env: Env, dataset_id: str
 ) -> None:
@@ -172,6 +176,7 @@ async def test_generic_denial_never_names_the_model(env: Env) -> None:
         assert secret.lower() not in excinfo.value.message.lower()
 
 
+@pytest.mark.scenario(4)
 async def test_scenario_4_newly_granted_access_works_immediately(env: Env) -> None:
     service, probe, clock, _ = env
     await service.build_context(request_ctx())  # Finance cached as denied
@@ -210,6 +215,7 @@ async def test_unverifiable_model_returns_503_not_a_denial(env: Env) -> None:
 # --- scenarios 5 and 20: revocation -------------------------------------------------------------
 
 
+@pytest.mark.scenario(5)
 async def test_scenario_5_revocation_reported_by_power_bi_takes_effect_at_once(env: Env) -> None:
     service, probe, clock, sm = env
     authz = await service.build_context(request_ctx())
@@ -222,6 +228,7 @@ async def test_scenario_5_revocation_reported_by_power_bi_takes_effect_at_once(e
     assert (await audit_events(sm))[-1].event_type == "authz.revoked"
 
 
+@pytest.mark.scenario(20)
 async def test_scenario_20_follow_up_after_revocation_is_denied(env: Env) -> None:
     service, probe, clock, _ = env
     first_turn = await service.build_context(request_ctx())

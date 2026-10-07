@@ -67,15 +67,42 @@ uv run python -m app.jobs.ask --user user-a --model sales-ds "What are GOLD sale
 uv run python -m app.jobs.ask --user user-a --session <id> "and last year?"
 #   Real-LLM smoke test: GROQ_API_KEY=... uv run pytest -m network -k groq
 
+# Chat API (what the visual calls): Server-Sent Events over POST
+curl -N -X POST http://localhost:8000/api/v1/chat/stream -H "Authorization: Bearer <token>"      -H "Content-Type: application/json" -d '{"question": "What are GOLD sales this FY?", "primary_model_id": "sales-ds"}'
+#   GET/DELETE /api/v1/chat/sessions/{id} restores/deletes a conversation; POST /api/v1/chat/sessions = New chat
+
+# Security (Phase 11): scenario coverage + red-team run with the normal suite; scans:
+bash ../scripts/security-scan.sh      # pip-audit, npm audit, gitleaks (history + tree)
+#   Real-model red-team: GROQ_API_KEY=... uv run pytest -m network -k redteam
+#   docs/security/: threat model, scenario matrix, scan results
+
 # Retention cleanup also runs on its own, e.g. from OS cron / a container or cloud scheduler:
 uv run python -m app.jobs.cleanup
 
-# 5. Visual
+# 5. Visual (React + TypeScript)
 cd ../visual
 npm install
-npx eslint .
+npm test                # vitest: SSE, state, auth, filters, markdown safety, App and Visual
+npm run typecheck       # strict TypeScript over src/
+npx eslint .            # includes the Power BI certification rules (no innerHTML, ...)
 npx pbiviz package      # -> visual/dist/*.pbiviz
 ```
+
+### Running the visual locally (before IT delivers SSO)
+
+1. Backend in dev mode **over HTTPS** (Power BI Service blocks plain-HTTP calls from visuals):
+   ```bash
+   mkcert -install && mkcert localhost          # once; creates localhost.pem + localhost-key.pem
+   cd backend && uv run uvicorn app.main:create_app --factory --port 8000        --ssl-certfile ../localhost.pem --ssl-keyfile ../localhost-key.pem
+   ```
+   With `AUTH_PROVIDER=dev`, `ENVIRONMENT=local`, `POWERBI_GATEWAY=dev_synthetic`, `DEV_MODEL_ACCESS` and
+   `GROQ_API_KEY` in `.env`, plus the dev fixtures indexed (`app.jobs.metadata load-fixture`).
+2. Visual in dev mode: `npm run configure:dev` (sign-in through the backend's local-only `/api/v1/dev/token`).
+   Then `npx pbiviz install-cert` (needs PowerShell 7, `pwsh`, on Windows) and `npx pbiviz start`.
+3. Power BI Service: Settings → Developer settings → **Developer mode** on. Add the *Developer visual* to a
+   report page. In Format pane → Developer, set the dev user (e.g. `user-a`). In Data source, pick the model.
+4. Before packaging for real use: `npm run configure -- --api https://<backend> --app-id-uri https://<App ID URI>`
+   (production SSO build; the dev sign-in code path is not used).
 
 ## Switchable providers (`.env`)
 

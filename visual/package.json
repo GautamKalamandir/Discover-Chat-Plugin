@@ -7,19 +7,30 @@
     "pbiviz": "pbiviz",
     "start": "pbiviz start",
     "package": "pbiviz package",
-    "lint": "npx eslint ."
+    "lint": "npx eslint .",
+    "test": "vitest run",
+    "configure": "node scripts/configure.mjs",
+    "typecheck": "tsc -p tsconfig.strict.json",
+    "configure:dev": "node scripts/configure.mjs --mode dev --api https://localhost:8000"
   },
   "dependencies": {
-    "@types/d3": "7.4.3",
-    "d3": "7.9.0",
     "powerbi-visuals-api": "5.11.1",
-    "powerbi-visuals-utils-formattingmodel": "6.0.4"
+    "powerbi-visuals-utils-formattingmodel": "6.0.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
     "@typescript-eslint/eslint-plugin": "^8.8.0",
     "eslint": "^9.11.1",
     "eslint-plugin-powerbi-visuals": "^1.0.0",
-    "typescript": "5.5.4"
+    "jsdom": "^30.1.2",
+    "less": "^4.9.1",
+    "typescript": "5.5.4",
+    "vitest": "^5.0.3"
   },
   "private": true
 }

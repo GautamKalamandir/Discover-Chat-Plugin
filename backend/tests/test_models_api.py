@@ -62,12 +62,14 @@ async def test_user_without_grants_sees_no_models(client: AsyncClient) -> None:
     assert response.json() == {"models": []}
 
 
+@pytest.mark.scenario(1)
 async def test_allowed_model_is_returned(client: AsyncClient) -> None:
     response = await client.get("/api/v1/models/sales-ds", headers=token("user-a"))
 
     assert response.json() == {"id": "sales-ds", "name": "Sales", "domain": "Sales"}
 
 
+@pytest.mark.scenario(11)
 async def test_forbidden_disabled_and_unknown_models_are_indistinguishable(
     client: AsyncClient,
 ) -> None:

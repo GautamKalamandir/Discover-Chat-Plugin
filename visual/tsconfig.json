@@ -8,9 +8,13 @@
         "outDir": "./.tmp/build/",
         "moduleResolution": "node",
         "declaration": true,
+        "jsx": "react-jsx",
+        "esModuleInterop": true,
+        "skipLibCheck": true,
         "lib": [
             "es2022",
-            "dom"
+            "dom",
+            "dom.iterable"
         ]
     },
     "files": [

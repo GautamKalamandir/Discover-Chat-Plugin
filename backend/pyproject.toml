@@ -16,6 +16,7 @@ dependencies = [
     "pydantic-settings>=2.4",
     "pyjwt[crypto]>=2.9",
     "sqlalchemy[asyncio]>=2.0",
+    "sse-starlette>=3.5",
     "uvicorn[standard]>=0.54.0",
 ]
 
@@ -41,6 +42,7 @@ ignore = []
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "S105", "S106", "S107"]
+"tests/security/redteam_cases.py" = ["E501"]  # adversarial prompts are long by nature
 "tests/fake_fabric_iq.py" = ["N803"]  # parameter names mirror the Fabric IQ tool contract
 "app/core/errors.py" = ["S105"]  # error-code names such as TOKEN_EXPIRED are not secrets
 
@@ -62,4 +64,5 @@ addopts = "-m 'not network'"
 markers = [
     "integration: requires running infrastructure (docker compose up)",
     "network: downloads models or calls external services; run explicitly with -m network",
+    "scenario(n): proves security scenario n of IMPLEMENTATION_PLAN.md section 7 (ADR 0011)",
 ]

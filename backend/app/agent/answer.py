@@ -144,7 +144,7 @@ class AnswerWriter:
             text = ""
         bad = ungrounded_numbers(text, allowed) if text else ["<empty>"]
         if bad:
-            logger.warning("Answer not grounded (%s); using template answer", bad[:5])
+            logger.warning("Answer not grounded (%d numbers); using template answer", len(bad))
             text = template_answer(facts)
         if "dev_synthetic" in facts.data_sources:
             text += DEV_DATA_NOTE

@@ -130,6 +130,7 @@ def test_validator_rejects(dax: str, reason: str) -> None:
     assert excinfo.value.message == "I couldn't run the query for that question. Try rephrasing it."
 
 
+@pytest.mark.scenario(16)
 def test_object_hidden_from_this_user_is_rejected() -> None:
     dax = "EVALUATE VALUES('Customer'[CreditLimit])"
 
@@ -203,6 +204,7 @@ def test_compare_two_single_values() -> None:
     assert "+10.00%" in template_answer(facts)
 
 
+@pytest.mark.scenario(18)
 def test_grouped_results_are_ranked_and_truncation_reported() -> None:
     s = step(group_by=["Product[LOB]"], order="value_desc")
     rows = [

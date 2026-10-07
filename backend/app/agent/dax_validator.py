@@ -25,27 +25,32 @@ _COMMENTS = re.compile(r"/\*.*?\*/|//[^\n]*|--[^\n]*", re.DOTALL)
 
 
 class DaxValidationError(AppError):
-    def __init__(self, reason: str) -> None:
+    """`reason` (may name objects from LLM-written DAX) goes to the repair loop; logs get `kind`."""
+
+    def __init__(self, reason: str, kind: str) -> None:
         super().__init__(
             ErrorCode.QUERY_REJECTED,
             "I couldn't run the query for that question. Try rephrasing it.",
             422,
-            log_detail=f"DAX rejected: {reason}",
+            log_detail=f"DAX rejected: {kind}",
         )
         self.reason = reason
+        self.kind = kind
 
 
 def validate_dax(dax: str, schema: NormalizedSchema) -> None:
     try:
         ensure_read_only_query(dax)
     except AppError as exc:
-        raise DaxValidationError(exc.log_detail or "not a read-only query") from exc
+        raise DaxValidationError(
+            exc.log_detail or "not a read-only query", "not_read_only"
+        ) from exc
 
     code = _COMMENTS.sub(" ", dax)
     aliases = {m.group(0)[1:-1].replace('""', '"') for m in _STRING.finditer(code)}
     code = _STRING.sub('""', code)  # string contents can't smuggle references
     if len(_EVALUATE.findall(code)) != 1:
-        raise DaxValidationError("exactly one EVALUATE is required")
+        raise DaxValidationError("exactly one EVALUATE is required", "evaluate_count")
 
     defined = {m.group(1) for m in _DEFINED.finditer(code)}
     visible = schema.visible_keys
@@ -66,4 +71,7 @@ def validate_dax(dax: str, schema: NormalizedSchema) -> None:
         if name not in measure_names and name not in aliases and name not in defined:
             unknown.append(f"[{name}]")
     if unknown:
-        raise DaxValidationError(f"objects not in the user's schema: {sorted(set(unknown))}")
+        raise DaxValidationError(
+            f"objects not in the user's schema: {sorted(set(unknown))}",
+            f"unknown_objects:{len(set(unknown))}",
+        )

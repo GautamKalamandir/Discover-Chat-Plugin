@@ -4,6 +4,7 @@ Accepts HS256 tokens signed with DEV_AUTH_SECRET (mint them with scripts/mint_de
 Refuses to start outside ENVIRONMENT=local|test.
 """
 
+import time
 from typing import Any
 
 import jwt
@@ -60,3 +61,30 @@ class DevAuthProvider(AuthProvider):
             scopes=frozenset(str(claims.get("scp", "")).split()),
             client_app_id=DEV_ISSUER,
         )
+
+
+def mint_dev_token(
+    settings: Settings,
+    oid: str,
+    *,
+    tid: str = "dev-tenant",
+    name: str | None = None,
+    upn: str | None = None,
+    minutes: int = 60,
+) -> str:
+    """A token DevAuthProvider accepts. Only for AUTH_PROVIDER=dev (local development)."""
+    DevAuthProvider(settings)  # same guards: dev provider, local/test environment, strong secret
+    assert settings.dev_auth_secret is not None  # noqa: S101 - checked by DevAuthProvider
+    now = int(time.time())
+    claims = {
+        "iss": DEV_ISSUER,
+        "aud": DEV_AUDIENCE,
+        "iat": now,
+        "nbf": now,
+        "exp": now + minutes * 60,
+        "oid": oid,
+        "tid": tid,
+        "upn": upn or f"{oid}@dev.local",
+        "name": name or oid,
+    }
+    return jwt.encode(claims, settings.dev_auth_secret.get_secret_value(), algorithm="HS256")

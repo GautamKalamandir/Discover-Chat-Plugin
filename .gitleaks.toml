@@ -1,0 +1,18 @@
+# Secret scanning (ADR 0011). Run: scripts/security-scan.sh
+# Only installed third-party packages and build output are skipped; all project files are scanned.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Installed dependencies and build artefacts (not project code; all gitignored)"
+paths = [
+    '''(^|/)backend/\.venv/''',
+    '''(^|/)node_modules/''',
+    '''(^|/)\.cache/''',
+    '''(^|/)visual/dist/''',
+    '''(^|/)visual/\.tmp/''',
+    '''(^|/)\.mypy_cache/''',
+    '''(^|/)\.ruff_cache/''',
+    '''(^|/)\.pytest_cache/''',
+]

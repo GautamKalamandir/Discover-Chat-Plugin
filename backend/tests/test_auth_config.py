@@ -97,3 +97,30 @@ async def test_bad_dev_tokens_are_rejected(token: str, code: str) -> None:
 
     assert response.status_code == 401
     assert response.json()["error"]["code"] == code
+
+
+async def test_dev_token_endpoint_issues_working_tokens_in_local_dev() -> None:
+    app = create_app(dev_settings())
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        issued = await client.post("/api/v1/dev/token", json={"oid": "user-a", "name": "User A"})
+        token = issued.json()["access_token"]
+        session = await client.get("/api/v1/session", headers={"Authorization": f"Bearer {token}"})
+
+    assert issued.status_code == 200 and issued.json()["expires_in"] == 3600
+    assert session.json()["user"]["object_id"] == "user-a"
+
+
+@pytest.mark.parametrize("oid", ["", "x" * 65, "bad id!", "../etc"])
+async def test_dev_token_endpoint_validates_the_user_id(oid: str) -> None:
+    app = create_app(dev_settings())
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post("/api/v1/dev/token", json={"oid": oid})
+
+    assert response.status_code == 422
+
+
+async def test_dev_token_endpoint_does_not_exist_with_entra_auth(client: AsyncClient) -> None:
+    # `client` is the Entra-configured app from conftest.
+    response = await client.post("/api/v1/dev/token", json={"oid": "user-a"})
+
+    assert response.status_code == 404

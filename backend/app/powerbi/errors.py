@@ -44,6 +44,7 @@ class DaxQueryError(AppError):
             ErrorCode.QUERY_FAILED,
             "I couldn't run the query for that question. Try rephrasing it.",
             422,
-            log_detail=f"DAX error: {dax_error[:500]}",
+            # Power BI's text can echo filter values (user data): never logged (Q18).
+            log_detail=f"DAX query failed (error text withheld, {len(dax_error)} chars)",
         )
         self.dax_error = dax_error

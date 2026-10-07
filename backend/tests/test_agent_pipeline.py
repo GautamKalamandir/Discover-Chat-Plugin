@@ -150,8 +150,8 @@ class Env:
             return int(await session.scalar(text(f"SELECT count(*) FROM {table} {where}")) or 0)  # noqa: S608
 
 
-@pytest.fixture
-async def env(committed_sessionmaker: async_sessionmaker[AsyncSession]) -> Env:
+async def build_env(committed_sessionmaker: async_sessionmaker[AsyncSession]) -> Env:
+    """Registry + indexed fixtures + real authorization; reused by the security suite."""
     await seed_registry(committed_sessionmaker)
     indexer = SemanticIndexer(committed_sessionmaker, HashEmbedder())
     sync = MetadataSync(indexer, committed_sessionmaker)
@@ -161,6 +161,11 @@ async def env(committed_sessionmaker: async_sessionmaker[AsyncSession]) -> Env:
     user_schemas = UserSchemaService(DevFixtureSchemaSource(str(FIXTURES)), None, SETTINGS)
     retriever = SemanticRetriever(committed_sessionmaker, indexer, user_schemas, SETTINGS)
     return Env(committed_sessionmaker, authz_service, retriever, user_schemas)
+
+
+@pytest.fixture
+async def env(committed_sessionmaker: async_sessionmaker[AsyncSession]) -> Env:
+    return await build_env(committed_sessionmaker)
 
 
 def plan(*steps: dict[str, Any], status: str = "ready", **extra: Any) -> str:
@@ -269,6 +274,7 @@ async def test_clarification_is_asked_and_nothing_runs(env: Env) -> None:
         plan(GOLD_STEP, unresolved_terms=["finance"]),  # "ready" but incomplete: still refused
     ],
 )
+@pytest.mark.scenario(6)
 async def test_scenario_6_partial_coverage_gets_generic_message(env: Env, planned: str) -> None:
     events = await env.run(
         env.agent(ScriptedLLM([planned])), "user-a", "Compare sales with finance"
@@ -278,6 +284,7 @@ async def test_scenario_6_partial_coverage_gets_generic_message(env: Env, planne
     assert await env.count("query_executions") == 0
 
 
+@pytest.mark.scenario(7)
 async def test_scenario_7_plan_naming_a_forbidden_model_is_denied(env: Env) -> None:
     finance_step = {
         **GOLD_STEP,
@@ -295,6 +302,7 @@ async def test_scenario_7_plan_naming_a_forbidden_model_is_denied(env: Env) -> N
     assert await env.count("audit_events", "WHERE outcome = 'deny'") == 1
 
 
+@pytest.mark.scenario(16)
 async def test_scenario_16_object_hidden_from_user_is_never_queried(env: Env) -> None:
     hidden = {
         "model_id": "sales-ds",
@@ -312,6 +320,7 @@ async def test_scenario_16_object_hidden_from_user_is_never_queried(env: Env) ->
     assert await env.count("query_executions") == 0
 
 
+@pytest.mark.scenario(17)
 async def test_scenario_17_non_query_dax_from_the_llm_never_runs(env: Env) -> None:
     custom = {"model_id": "sales-ds", "label": "tables", "custom_dax": "EVALUATE INFO.TABLES()"}
     repaired = json.dumps({"dax": "EVALUATE INFO.TABLES()"})
@@ -326,6 +335,7 @@ async def test_scenario_17_non_query_dax_from_the_llm_never_runs(env: Env) -> No
     assert await env.count("query_executions", "WHERE status = 'rejected'") == 3
 
 
+@pytest.mark.scenario(12)
 async def test_scenario_12_injected_text_and_invented_numbers_fall_back_to_template(
     env: Env,
 ) -> None:

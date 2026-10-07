@@ -73,6 +73,7 @@ async def test_owner_can_load_their_session(db_session: AsyncSession) -> None:
     assert loaded.id == chat.id
 
 
+@pytest.mark.scenario(22)
 async def test_other_user_cannot_load_someone_elses_session(db_session: AsyncSession) -> None:
     repo = ChatRepository(db_session, retention_hours=12)
     owner = await make_user(db_session, "user-a")

@@ -79,6 +79,7 @@ async def test_response_never_contains_the_token(
     "headers",
     [{}, {"Authorization": ""}, {"Authorization": "Basic abc"}, {"Authorization": "Bearer "}],
 )
+@pytest.mark.scenario(10)
 async def test_missing_token_is_rejected(client: AsyncClient, headers: dict[str, str]) -> None:
     response = await client.get(SESSION, headers=headers)
 
@@ -98,6 +99,7 @@ async def test_oversized_token_is_rejected(client: AsyncClient) -> None:
 # --- scenario 14: expired / not yet valid / wrong audience --------------------------------------
 
 
+@pytest.mark.scenario(14)
 async def test_expired_token_is_rejected(client: AsyncClient, make_token: TokenFactory) -> None:
     past = int(time.time()) - 7200
     token = make_token(iat=past, nbf=past, exp=past + 600)
@@ -116,6 +118,7 @@ async def test_token_not_yet_valid_is_rejected(
     "audience",
     ["https://analysis.windows.net/powerbi/api", "https://evil.example.com", None],
 )
+@pytest.mark.scenario(14)
 async def test_wrong_or_missing_audience_is_rejected(
     client: AsyncClient, make_token: TokenFactory, audience: str | None
 ) -> None:
@@ -125,6 +128,7 @@ async def test_wrong_or_missing_audience_is_rejected(
 # --- scenario 13: tenant allow-list and issuer --------------------------------------------------
 
 
+@pytest.mark.scenario(13)
 async def test_token_from_other_tenant_is_forbidden(
     client: AsyncClient, make_token: TokenFactory
 ) -> None:

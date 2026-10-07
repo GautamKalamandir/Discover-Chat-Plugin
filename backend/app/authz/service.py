@@ -6,6 +6,7 @@ request still leaves its audit record and refreshed cache behind.
 """
 
 import logging
+import re
 import uuid
 from collections.abc import Callable, Iterable, Sequence
 from datetime import UTC, datetime, timedelta
@@ -25,6 +26,13 @@ from app.db.repositories.users import UserRepository
 logger = logging.getLogger(__name__)
 
 Clock = Callable[[], datetime]
+
+_ID = re.compile(r"[A-Za-z0-9._-]{1,64}")
+
+
+def safe_ids(ids: Iterable[str]) -> list[str]:
+    """Model ids can come from LLM output; anything not shaped like an id is not logged (Q18)."""
+    return [i if _ID.fullmatch(i) else "<invalid-id>" for i in ids]
 
 
 def _utcnow() -> datetime:
@@ -117,8 +125,10 @@ class AuthorizationService:
                 denied=missing,
             )
             if unverified:
-                raise messages.access_check_unavailable(f"Unverified models: {unverified}")
-            raise messages.access_denied(f"Denied models: {missing}")
+                raise messages.access_check_unavailable(
+                    f"Unverified models: {safe_ids(unverified)}"
+                )
+            raise messages.access_denied(f"Denied models: {safe_ids(missing)}")
 
         await self._audit(authz, AuditOutcome.ALLOW, requested, session_id, reason="allowed")
         return authz
@@ -231,15 +241,15 @@ class AuthorizationService:
         reason: str,
         denied: Sequence[str] = (),
     ) -> None:
-        details: dict[str, object] = {"model_ids": list(requested)}
+        details: dict[str, object] = {"model_ids": safe_ids(requested)}
         if denied:
-            details["denied_model_ids"] = list(denied)
+            details["denied_model_ids"] = safe_ids(denied)
         async with self._sessionmaker() as session, session.begin():
             await AuditRepository(session).record(
                 "authz.decision",
                 outcome,
                 user=authz.request.user,
-                pbi_dataset_id=requested[0] if len(requested) == 1 else None,
+                pbi_dataset_id=safe_ids(requested)[0] if len(requested) == 1 else None,
                 session_id=session_id,
                 correlation_id=authz.request.correlation_id,
                 reason=reason,

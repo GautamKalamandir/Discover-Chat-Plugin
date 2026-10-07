@@ -67,6 +67,7 @@ def titles(docs: list) -> list[str]:  # type: ignore[type-arg]
 # --- scenario 9: only allowed models are searched -----------------------------------------------
 
 
+@pytest.mark.scenario(9)
 async def test_restricted_model_is_never_returned_even_as_best_match(env: Env) -> None:
     authz = await authz_for(env.sm, "user-a", ["sales-ds", "hr-ds"])
 
@@ -96,6 +97,7 @@ async def test_user_with_no_models_gets_nothing(env: Env) -> None:
 # --- scenario 16: object-level security ---------------------------------------------------------
 
 
+@pytest.mark.scenario(16)
 async def test_object_hidden_from_the_user_is_not_returned(env: Env) -> None:
     query = "customer credit limit"
     user_a = await authz_for(env.sm, "user-a", ["sales-ds"])

@@ -39,6 +39,10 @@ DEFAULT_AGENT_RESULT_ROWS_TO_LLM = 50
 DEFAULT_AGENT_TABLE_ROWS = 200
 DEFAULT_AGENT_CONTEXT_DOCS = 12
 DEFAULT_FISCAL_YEAR_START_MONTH = 4  # Q13c: April-March
+DEFAULT_CHAT_TURN_TIMEOUT_SECONDS = 120
+DEFAULT_CHAT_QUESTIONS_PER_MINUTE = 20
+DEFAULT_CHAT_MAX_CONCURRENT_TURNS = 2
+DEFAULT_CHAT_HEARTBEAT_SECONDS = 15
 _MAX_HOURS_OR_MINUTES = 1_000_000  # guards against overflow from absurd values
 _FALLBACKS = {
     "conversation_retention_hours": DEFAULT_CONVERSATION_RETENTION_HOURS,
@@ -66,6 +70,10 @@ _FALLBACKS = {
     "agent_result_rows_to_llm": DEFAULT_AGENT_RESULT_ROWS_TO_LLM,
     "agent_table_rows": DEFAULT_AGENT_TABLE_ROWS,
     "agent_context_docs": DEFAULT_AGENT_CONTEXT_DOCS,
+    "chat_turn_timeout_seconds": DEFAULT_CHAT_TURN_TIMEOUT_SECONDS,
+    "chat_questions_per_minute": DEFAULT_CHAT_QUESTIONS_PER_MINUTE,
+    "chat_max_concurrent_turns": DEFAULT_CHAT_MAX_CONCURRENT_TURNS,
+    "chat_heartbeat_seconds": DEFAULT_CHAT_HEARTBEAT_SECONDS,
 }
 
 # Power BI client applications that request tokens for custom visuals (commercial cloud).
@@ -166,6 +174,10 @@ class Settings(BaseSettings):
         "agent_result_rows_to_llm",
         "agent_table_rows",
         "agent_context_docs",
+        "chat_turn_timeout_seconds",
+        "chat_questions_per_minute",
+        "chat_max_concurrent_turns",
+        "chat_heartbeat_seconds",
         mode="before",
     )
     @classmethod
@@ -250,6 +262,12 @@ class Settings(BaseSettings):
     agent_context_docs: int = DEFAULT_AGENT_CONTEXT_DOCS
     fiscal_year_start_month: int = DEFAULT_FISCAL_YEAR_START_MONTH
 
+    # --- Chat API (ADR 0009). Missing/invalid values fall back to the defaults. ---
+    chat_turn_timeout_seconds: int = DEFAULT_CHAT_TURN_TIMEOUT_SECONDS
+    chat_questions_per_minute: int = DEFAULT_CHAT_QUESTIONS_PER_MINUTE
+    chat_max_concurrent_turns: int = DEFAULT_CHAT_MAX_CONCURRENT_TURNS
+    chat_heartbeat_seconds: int = DEFAULT_CHAT_HEARTBEAT_SECONDS
+
     @field_validator("powerbi_max_retries", "llm_max_retries", "agent_max_repairs", mode="before")
     @classmethod
     def _non_negative_int_or_default(cls, value: object, info: ValidationInfo) -> int:
@@ -306,6 +324,25 @@ class Settings(BaseSettings):
     dev_schema_fixture_dir: str = "dev-fixtures/schemas"
     # Optional public-client app registration for the admin sync CLI (docs/entra-setup.md §4).
     admin_cli_client_id: str | None = None
+
+
+def production_problems(settings: Settings) -> list[str]:
+    """Settings that must never reach ENVIRONMENT=prod (ADR 0011). Empty list = fine."""
+    problems = []
+    if settings.auth_provider is not AuthProviderName.ENTRA:
+        problems.append("AUTH_PROVIDER must be entra")
+    gateways = {settings.powerbi_gateway, settings.powerbi_fallback_gateway}
+    if PowerBIGatewayName.DEV_SYNTHETIC in gateways:
+        problems.append("POWERBI_GATEWAY / POWERBI_FALLBACK_GATEWAY must not be dev_synthetic")
+    if "*" in settings.cors_allowed_origins:
+        problems.append("CORS_ALLOWED_ORIGINS must not contain *")
+    if not settings.entra_allowed_tenant_ids:
+        problems.append("ENTRA_ALLOWED_TENANT_IDS must not be empty")
+    if settings.dev_auth_secret is not None or settings.dev_model_access:
+        problems.append("DEV_AUTH_SECRET / DEV_MODEL_ACCESS must not be set")
+    if settings.log_level.upper() == "DEBUG":
+        problems.append("LOG_LEVEL must not be DEBUG")
+    return problems
 
 
 @lru_cache

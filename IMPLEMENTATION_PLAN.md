@@ -5,7 +5,7 @@
 
 | Item | Value |
 |---|---|
-| Status | **Phases 1, 3–8 DONE 2026-10-06.** Phase 0 is with IT (docs/entra-setup.md). Phase 2 waits on IT. Next candidate: Phase 9 (chat API + SSE) |
+| Status | **Phases 1, 3–11 DONE (2026-10-07). Phase 12 DEFERRED.** Phase 0 is with IT (docs/entra-setup.md). Phase 2 waits on IT. Next candidate: Phase 13 (deployment, needs Q5) |
 | Last research pass | 2026-10-06 (Microsoft Learn docs verified, see §13) |
 | Approval model | Each phase is implemented only after explicit approval. Nothing beyond the current approved phase is built. |
 
@@ -694,7 +694,7 @@ was superseded by Q13 (fixed pipeline, no LLM tool calls):
 
 ---
 
-### Phase 9 — Chat API & streaming ⛔
+### Phase 9 — Chat API & streaming ✅ DONE 2026-10-07
 **Goal:** `POST /api/v1/chat/stream` with SSE events.
 
 Event contract:
@@ -708,9 +708,28 @@ event: done     data: {"message_id": "...", "query_ids": [...]}
 Tasks: session create/resume, cancellation on client disconnect, heartbeat, timeouts, idempotency on retries.
 Acceptance: end-to-end question from curl with a valid test token returns a streamed, correct answer.
 
+**Delivered** (design: [docs/design/phase-9-chat-api.md](docs/design/phase-9-chat-api.md), ADR 0009):
+- `POST /api/v1/chat/stream` (SSE via sse-starlette): `session → status… → table → token… → done`, plus
+  `clarification` and `error`, increasing ids, and a heartbeat ping.
+- Conversations: `POST /chat/sessions` (New chat), `GET /chat/sessions/{id}` (restore, text only, Q9c),
+  `DELETE /chat/sessions/{id}`. All are owner-only with an identical 404 (scenario 22 through the API).
+- Rejected before streaming:
+  - 401 without sign-in;
+  - generic 404 for a forbidden or unknown primary model;
+  - 422 for invalid input;
+  - 409 for a turn already running in the conversation;
+  - 429 for 20 questions per minute or 2 parallel answers.
+- `TurnGuard`: slots expire on their own. A 120 s turn timeout and client disconnect both cancel the agent, and no
+  assistant message is stored.
+- 343 tests pass, including real disconnect cancellation over raw ASGI. Verified live with `curl -N` and
+  `Origin: null`: correct framing and headers, session restore, another user's session gives 404, a forbidden model
+  gives 404.
+- Also: Docker Desktop had stopped (machine restart). DB tests show as skipped rather than failed when Postgres is
+  down, so check for skips.
+
 ---
 
-### Phase 10 — Power BI custom visual (`.pbiviz`) ⛔ 🔍
+### Phase 10 — Power BI custom visual (`.pbiviz`) ✅ DONE 2026-10-07 🔍
 **Goal:** The user-facing chatbot.
 
 Tasks:
@@ -723,21 +742,68 @@ Tasks:
 - Format pane: backend URL (locked list), model selection, display options.
 - Verify in Service, Desktop, and Mobile (and confirm Teams/Embedded show the "unsupported" state).
 
+**Delivered** (design: [docs/design/phase-10-visual.md](docs/design/phase-10-visual.md), ADR 0010):
+- **UI (React 18 + TypeScript, Q14):** header (signed-in user, New chat, Delete chat), streaming messages with
+  stage line, result tables, safe markdown (AST rendering, no `innerHTML` anywhere), composer (Enter/Shift+Enter,
+  Stop), author hint, Power BI theme and high-contrast support.
+- **Sign-in:** `EntraTokenProvider` (SSO API; each privilege status has its own message; refresh 2 min before
+  expiry; one forced refresh on 401). The API client streams SSE via `fetch` + a stream reader.
+- **Model and filters:** the Format-pane model dropdown is filled from `/models/accessible`; the saved choice is
+  read from the report objects. The "Context fields" role sends slicer selections as `report_filters` (≤ 50
+  values per field).
+- **Conversation restore** through Power BI local storage (`storageV2Service`), falling back to memory.
+- **Build-time config:** `npm run configure` sets the backend origin, `WebAccess`, `AADAuthentication` and
+  LocalStorage privileges, and refuses non-HTTPS URLs. Dev builds sign in through the backend's local-only
+  `/api/v1/dev/token`, which is only mounted with `AUTH_PROVIDER=dev` and `ENVIRONMENT=local|test`.
+- **Checks:** 27 vitest tests (visual) and 349 backend tests pass. Strict typecheck, ESLint with the Power BI
+  certification rules, and `pbiviz package` all succeed (57 KB package).
+
+**Not verified yet:** running inside Power BI (Service/Desktop/Mobile, Teams/Embedded states). That needs your
+Power BI with Developer mode (manual), plus IT's app registration for real SSO (spikes S1/S6).
+
 ---
 
-### Phase 11 — Security hardening & scenario test suite ⛔
+### Phase 11 — Security hardening & scenario test suite ✅ DONE 2026-10-07
 Tasks: all 22 scenarios automated. Red-team prompt set (injection, jailbreak, cross-model probing, metadata fishing).
 Dependency scanning. Secret scanning. Logging review (no tokens/PII in logs per Q9). Threat model doc (STRIDE).
 Acceptance: 100% scenario tests pass. Red-team set produces zero unauthorized model access.
 
+**Delivered** (design: [docs/design/phase-11-security.md](docs/design/phase-11-security.md), ADR 0011,
+[threat model](docs/security/threat-model.md)):
+- **Scenario coverage:** 22/22 scenarios tagged (`@pytest.mark.scenario(N)`, visual `// @scenario 21`), with a
+  meta-test guarding coverage. New tests for #8 (indirect reference) and #15 (RLS: per-user token, no shared
+  results).
+- **Red-team:** 33 adversarial prompts across injection, cross-model probing, metadata fishing, OLS exfiltration
+  and query smuggling, run with a **fully compromised LLM**. Result: **0 unauthorized model access, 0 forbidden
+  queries, 0 restricted-name leaks** to the user or the LLM provider. The checker is itself tested against planted
+  violations. A live `-m network` variant exists.
+- **Q18 logging:**
+  - Power BI DAX error text, unresolved terms, ungrounded numbers and LLM validation text removed from logs;
+  - LLM-supplied model ids sanitized;
+  - redacting formatter (JWT / Bearer / keys, including Groq `gsk_` keys, a bug the tests caught);
+  - chatty libraries pinned to WARNING.
+
+  The canary test was shown to fail on the old code.
+- **Production guards:** unsafe configuration refuses to start, API docs are hidden in prod, and a CSP header is
+  added.
+- **Scans** (`scripts/security-scan.sh`): pip-audit clean; npm audit 0 after upgrading vitest to 5.0.3 (critical
+  tinypool RCE advisory in dev tooling); gitleaks clean over history and project files.
+- 400 backend tests (+35 network-only) and 27 visual tests pass.
+
 ---
 
-### Phase 12 — Observability, evaluation & performance ⛔
+### Phase 12 — Observability, evaluation & performance ⏸ DEFERRED 2026-10-07
 Tasks: OpenTelemetry traces (request → authz → tools → Power BI), metrics (latency per stage, deny rate, DAX error
 rate, LLM tokens/cost). Golden question set per model with expected numbers, scored nightly. Load test at the expected
 concurrency (Q11). Latency budget targets.
 
 ---
+
+**Deferred by decision (Q19):** no tracing, metrics, telemetry export, evaluation set or load test for now. The
+plan is kept in [docs/design/phase-12-observability-eval.md](docs/design/phase-12-observability-eval.md). Without
+it:
+- troubleshooting relies on correlation ids, Q18-safe logs and the stored conversations;
+- answer quality relies on the Phase 8 tests and the Phase 11 red-team suite.
 
 ### Phase 13 — Deployment & distribution ⛔
 Tasks: cloud infra per Q5 (IaC). Managed Postgres. Key Vault for cert/secret. Custom domain + TLS matching App ID URI.
@@ -803,6 +869,11 @@ tool layer, not HTTP routes exposed to the visual.
 | Q16 | **Generic denials.** The restricted model is never named. Unknown, disabled and forbidden models look identical (ADR 0005). |
 | Q10 | Business meaning comes from the **Power BI semantic model only**, with no CSV import for now (Q10a). Sync **on use + admin CLI** (Q10b). Local embeddings via **fastembed** (Q10c). ADR 0007. |
 | Q13 | **Fixed pipeline in plain Python.** The LLM never calls tools; it returns validated plans/DAX repairs and wording (ADR 0008). Default `openai/gpt-oss-120b` on Groq (Q13b). FY April–March (Q13c). |
+| Q17 | **One conversation per visual + "New chat"**, restored after re-render. No list of past chats (ADR 0009). |
+| Q14 | **React 18 + TypeScript** for the visual; AST-based safe markdown, no `innerHTML` (ADR 0010). |
+| Q18 | **No user content in logs:** ids, codes, counts, timings only; tokens/keys redacted (ADR 0011). |
+| Q11 | **Small scale:** ≤ 200 users, ~10 concurrent questions at peak, ≤ 50 semantic models, English only. Used for Phase 13 sizing. |
+| Q19 | **No telemetry platform, tracing, metrics, evaluation set or load test for now.** Phase 12 deferred (ADR 0012). |
 | Q7b | **Cross-model questions in v1.** The agent routes among the other models the user is authorized for, queries each separately, and combines the results. If any required model is denied, the whole request is denied. |
 
 ### 12.2 Remaining questions
@@ -813,9 +884,7 @@ before Phase 1; the others are asked before the phase that needs them.
 | # | Question | Blocks |
 |---|---|---|
 | Q5 | Hosting target for backend: Azure Container Apps / App Service / AKS / on-prem? | Phase 13 |
-| Q11 | Scale: number of users, expected concurrency, number of models (≈50?), languages (English only?) | Phase 12 |
 | Q12 | Must Teams or Power BI Embedded be supported? (Auth API doesn't support them.) | Architecture |
-| Q14 | Frontend stack inside the visual: plain TS + lightweight DOM, or React? | Phase 10 |
 
 ---
 

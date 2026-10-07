@@ -58,6 +58,7 @@ async def test_request_follows_the_documented_api() -> None:
     )
 
 
+@pytest.mark.scenario(18)
 async def test_rows_beyond_max_rows_are_cut_and_flagged() -> None:
     result = await run(lambda _: ok([{"x": i} for i in range(5)]), max_rows=3)
 
@@ -127,6 +128,7 @@ async def test_timeout_and_connection_errors() -> None:
         await run(refused)
 
 
+@pytest.mark.scenario(19)
 async def test_per_user_limit_stops_the_121st_query_per_minute() -> None:
     now = [0.0]
     limiter = PerUserRateLimiter(120, clock=lambda: now[0])

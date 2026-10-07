@@ -45,6 +45,7 @@ async def test_allowed_model_runs_the_tool(authz: AuthorizedContext) -> None:
 
 
 @pytest.mark.parametrize("model_id", ["finance-ds", "", "SALES-DS"])
+@pytest.mark.scenario(7)
 async def test_other_model_is_refused_before_the_tool_body(
     authz: AuthorizedContext, model_id: str
 ) -> None:

@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from datetime import datetime, timedelta
 from typing import Any
 
-from sqlalchemy import func, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError, ErrorCode
@@ -62,6 +62,19 @@ class ChatRepository:
         if chat is None:
             raise session_not_found()
         return chat
+
+    async def set_primary_model(self, chat: ChatSession, semantic_model_id: uuid.UUID) -> None:
+        if chat.primary_semantic_model_id != semantic_model_id:
+            chat.primary_semantic_model_id = semantic_model_id
+            await self._session.execute(
+                update(ChatSession)
+                .where(ChatSession.id == chat.id)
+                .values(primary_semantic_model_id=semantic_model_id)
+            )
+
+    async def delete_session(self, chat: ChatSession) -> None:
+        """Messages and query records cascade (ON DELETE CASCADE)."""
+        await self._session.execute(delete(ChatSession).where(ChatSession.id == chat.id))
 
     async def add_message(
         self,

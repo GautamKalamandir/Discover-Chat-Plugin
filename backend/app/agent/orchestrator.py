@@ -126,7 +126,7 @@ class Agent:
                 return
             if plan.status != "ready" or plan.unresolved_terms:
                 # Scenario 6/8: never a partial answer when part of the question isn't covered.
-                raise _cannot_answer(f"unresolved terms: {plan.unresolved_terms}")
+                raise _cannot_answer(f"unresolved terms: {len(plan.unresolved_terms)}")
 
             plan = await resolve_values(plan, authz, self._powerbi)
 
@@ -236,8 +236,10 @@ class Agent:
                 )
             except PlanInvalidError as exc:
                 if attempt == 1:
-                    raise _cannot_answer(f"plan still invalid: {exc.problems}") from exc
-                logger.info("Re-planning after invalid plan: %s", exc.problems)
+                    raise _cannot_answer(
+                        f"plan still invalid: {len(exc.problems)} problems"
+                    ) from exc
+                logger.info("Re-planning after invalid plan (%d problems)", len(exc.problems))
                 plan = await self._planner.replan(messages, plan, exc.problems)
                 continue
             return validated.plan, validated.authz

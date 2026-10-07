@@ -31,6 +31,10 @@ class ErrorCode(StrEnum):
     POWERBI_THROTTLED = "powerbi_throttled"
     QUESTION_INVALID = "question_invalid"
     CANNOT_ANSWER = "cannot_answer"
+    TURN_IN_PROGRESS = "turn_in_progress"
+    TOO_MANY_QUESTIONS = "too_many_questions"
+    TOO_MANY_PARALLEL_QUESTIONS = "too_many_parallel_questions"
+    TURN_TIMEOUT = "turn_timeout"
     SESSION_NOT_FOUND = "session_not_found"
     MODEL_NOT_FOUND = "model_not_found"
     # 401 — the visual should acquire a fresh token and retry once

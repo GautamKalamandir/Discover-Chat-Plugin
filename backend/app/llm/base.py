@@ -72,7 +72,8 @@ class LLMProvider(ABC):
             ErrorCode.LLM_OUTPUT_INVALID,
             "I couldn't work out how to answer that. Please try rephrasing your question.",
             502,
-            log_detail=f"{schema.__name__} validation failed twice: {last_error[:300]}",
+            # The validation error can quote LLM output derived from the question (Q18).
+            log_detail=f"{schema.__name__} validation failed twice",
         )
 
     async def aclose(self) -> None:  # noqa: B027 - optional hook

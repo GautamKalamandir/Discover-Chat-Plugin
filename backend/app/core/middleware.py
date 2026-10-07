@@ -56,6 +56,10 @@ class SecurityHeadersMiddleware:
                 headers.setdefault("Referrer-Policy", "no-referrer")
                 headers.setdefault("X-Frame-Options", "DENY")
                 headers.setdefault("Cache-Control", "no-store")
+                # JSON/SSE API: nothing may be loaded or framed from its responses.
+                headers.setdefault(
+                    "Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'"
+                )
                 if self.hsts:
                     headers.setdefault(
                         "Strict-Transport-Security", "max-age=31536000; includeSubDomains"

@@ -116,6 +116,7 @@ async def test_query_runs_on_primary_with_the_users_token() -> None:
     assert primary.calls == [{"token": "pbi-token", "dataset": "sales-ds", "max_rows": 250}]
 
 
+@pytest.mark.scenario(18)
 async def test_max_rows_is_capped_at_the_configured_limit() -> None:
     primary = ScriptedGateway("p", ["ok"])
     svc, _ = service(primary)
@@ -125,6 +126,7 @@ async def test_max_rows_is_capped_at_the_configured_limit() -> None:
     assert primary.calls[0]["max_rows"] == 1000
 
 
+@pytest.mark.scenario(7)
 async def test_g3_refuses_other_models_before_any_token_exchange() -> None:
     primary = ScriptedGateway("p", ["ok"])
     svc, _ = service(primary)
@@ -140,6 +142,7 @@ async def test_g3_refuses_other_models_before_any_token_exchange() -> None:
 @pytest.mark.parametrize(
     "dax", ["", "SELECT * FROM x", "EVALUATE $SYSTEM.TMSCHEMA_TABLES", "EVALUATE INFO.TABLES()"]
 )
+@pytest.mark.scenario(17)
 async def test_non_query_dax_never_reaches_power_bi(dax: str) -> None:
     primary = ScriptedGateway("p", ["ok"])
     svc, _ = service(primary)
@@ -182,6 +185,7 @@ async def test_throttling_is_retried_with_backoff_then_succeeds() -> None:
     assert sleeps == [3]
 
 
+@pytest.mark.scenario(19)
 async def test_persistent_throttling_becomes_a_friendly_429() -> None:
     primary = ScriptedGateway("p", [PowerBIThrottledError("busy")] * 3)
     svc, sleeps = service(primary, powerbi_max_retries=2)
@@ -215,6 +219,7 @@ async def test_all_gateways_unavailable_is_503() -> None:
     assert (excinfo.value.status_code, excinfo.value.code) == (503, "powerbi_unavailable")
 
 
+@pytest.mark.scenario(5)
 async def test_refusal_with_access_gone_revokes_and_denies_generically() -> None:
     access = Access(still_allowed=False)
     fallback = ScriptedGateway("rest", ["unused"])
@@ -240,6 +245,7 @@ async def test_mcp_refusal_with_access_confirmed_tries_rest() -> None:
     assert access.revoked == []
 
 
+@pytest.mark.scenario(3)
 async def test_rest_refusal_with_access_confirmed_means_missing_build_permission() -> None:
     access = Access(still_allowed=True)
     svc, _ = service(

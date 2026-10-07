@@ -5,11 +5,8 @@ Usage (from backend/):
 """
 
 import argparse
-import time
 
-import jwt
-
-from app.auth.dev import DEV_AUDIENCE, DEV_ISSUER
+from app.auth.dev import mint_dev_token
 from app.core.config import AuthProviderName, get_settings
 
 
@@ -25,20 +22,11 @@ def main() -> None:
     settings = get_settings()
     if settings.auth_provider is not AuthProviderName.DEV or not settings.dev_auth_secret:
         raise SystemExit("Set AUTH_PROVIDER=dev and DEV_AUTH_SECRET in .env first.")
-
-    now = int(time.time())
-    claims = {
-        "iss": DEV_ISSUER,
-        "aud": DEV_AUDIENCE,
-        "iat": now,
-        "nbf": now,
-        "exp": now + args.minutes * 60,
-        "oid": args.oid,
-        "tid": args.tid,
-        "upn": args.upn or f"{args.oid}@dev.local",
-        "name": args.name or args.oid,
-    }
-    print(jwt.encode(claims, settings.dev_auth_secret.get_secret_value(), algorithm="HS256"))
+    print(
+        mint_dev_token(
+            settings, args.oid, tid=args.tid, name=args.name, upn=args.upn, minutes=args.minutes
+        )
+    )
 
 
 if __name__ == "__main__":
