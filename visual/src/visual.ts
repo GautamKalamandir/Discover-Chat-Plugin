@@ -98,8 +98,12 @@ export class Visual implements IVisual {
     }
 
     private readonly onModels = (models: ModelOption[]): void => {
+        const changed = models.map((m) => m.id).join("|") !== this.models.map((m) => m.id).join("|");
         this.models = models;
         this.formattingSettings.applyModelChoice(models, this.modelId);
+        // The list arrives after Power BI built the Format pane; ask for an update so the
+        // dropdown is rebuilt (getFormattingModel runs again). Only on change: no update loop.
+        if (changed) this.host.refreshHostData?.();
     };
 
     /** Phase 2 (S5): what Power BI gives the visual, as structure and counts only. */

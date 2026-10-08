@@ -46,6 +46,21 @@ describe("Visual", () => {
         expect(element.querySelector(".chat")).toBeNull();
     });
 
+    it("asks Power BI to rebuild the Format pane when the model list arrives, once per change", async () => {
+        const host = { ...fakeHost(), refreshHostData: vi.fn() };
+        const visual = new Visual({ element: document.createElement("div"), host } as never);
+        await act(async () => update(visual));
+        const onModels = (visual as unknown as { onModels: (m: unknown[]) => void }).onModels;
+        const models = [{ id: "56cb4ea2", name: "KMJL Sales New", domain: "Sales" }];
+
+        onModels(models);
+        onModels(models); // same list again (e.g. re-render): no second refresh
+
+        expect(host.refreshHostData).toHaveBeenCalledTimes(1);
+        expect(JSON.stringify(visual.getFormattingModel())).toContain('"displayName":"KMJL Sales New"');
+        visual.destroy();
+    });
+
     it("keeps the saved model selected in the Format pane before models are loaded", async () => {
         const element = document.createElement("div");
         const visual = new Visual({ element, host: fakeHost() } as never);
