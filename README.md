@@ -1,4 +1,4 @@
-# Discover Chat Bot
+# Discover Chat Bot-
 
 A chatbot delivered as a Power BI custom visual (`.pbiviz`). It answers natural-language questions over Power BI semantic
 models. A FastAPI agent backend does the work, and users only ever reach the models they are authorized to access.
