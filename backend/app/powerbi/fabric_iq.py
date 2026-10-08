@@ -51,6 +51,9 @@ REQUIRED_TOOLS = frozenset({EXECUTE_QUERY, GET_SCHEMA, VALUE_SEARCH})
 
 # Tool error text -> classification. Fabric IQ documents the categories (invalid DAX,
 # unauthorized, timeout, throttled) but not exact wording; verify in spike S3.
+# Spike S3 (2026-10-08): a failing DAX query is NOT a tool error. It comes back as a normal
+# text result: "DAX query syntax error: DAX query execution failed: Query (1, 18) ...".
+_DAX_ERROR_PREFIXES = ("dax query syntax error", "dax query execution failed")
 _ACCESS_WORDS = ("unauthorized", "forbidden", "permission", "access denied", "not authorized")
 _THROTTLE_WORDS = ("throttl", "too many requests", "rate limit", "429")
 _TIMEOUT_WORDS = ("timeout", "timed out")
@@ -89,6 +92,8 @@ class FabricIqMcpGateway(PowerBIGateway):
             EXECUTE_QUERY,
             {"artifactId": dataset_id, "daxQueries": [dax], "maxRows": max_rows},
         )
+        if (dax_error := _dax_error_text(result)) is not None:
+            raise DaxQueryError(dax_error)
         rows = require_rows(_rows_from_result(result), "Fabric IQ ExecuteQuery")
         return QueryResult(
             columns=columns_of(rows),
@@ -156,6 +161,8 @@ class FabricIqMcpGateway(PowerBIGateway):
         }
         if result.is_error:
             described["classified_as"] = type(_classify_tool_error(_text_of(result))).__name__
+        elif _dax_error_text(result) is not None:
+            described["classified_as"] = DaxQueryError.__name__
         return described
 
     # --- MCP plumbing ---------------------------------------------------------------------------
@@ -223,13 +230,33 @@ def _csv_resource(result: CallToolResult) -> str | None:
     return None
 
 
+def _dax_error_text(result: CallToolResult) -> str | None:
+    """A DAX failure reported as an ordinary text result (spike S3)."""
+    text = _text_of(result).strip()
+    return text if text.lower().startswith(_DAX_ERROR_PREFIXES) else None
+
+
+def _structured(result: CallToolResult) -> Any:
+    """Structured content that carries data. Spike S3: Fabric IQ puts only an
+    `artifact_citation` (model name and link) there; the payload itself is the text."""
+    structured = result.structured_content
+    if not structured or set(structured) == {"artifact_citation"}:
+        return None
+    # Plain-string tool results arrive wrapped as {"result": "<json text>"}.
+    if set(structured) == {"result"} and isinstance(structured["result"], str):
+        parsed = parse_json_text(structured["result"])
+        return parsed if parsed is not None else structured["result"]
+    return structured
+
+
 def _rows_from_result(result: CallToolResult) -> list[dict[str, Any]] | None:
     # The CSV resource carries the complete result; inline content may be a preview.
     csv_text = _csv_resource(result)
     if csv_text is not None:
         return rows_from_csv(csv_text)
-    if result.structured_content is not None:
-        rows = rows_from_json(result.structured_content)
+    structured = _structured(result)
+    if structured is not None:
+        rows = rows_from_json(structured)
         if rows is not None:
             return rows
     for content in result.content:
@@ -241,16 +268,13 @@ def _rows_from_result(result: CallToolResult) -> list[dict[str, Any]] | None:
 
 
 def _payload_from_result(result: CallToolResult) -> Any:
-    structured = result.structured_content
-    if structured is not None:
-        # Plain-string tool results arrive wrapped as {"result": "<json text>"}.
-        if set(structured) == {"result"} and isinstance(structured["result"], str):
-            parsed = parse_json_text(structured["result"])
-            return parsed if parsed is not None else structured["result"]
-        return structured
+    # Spike S3: the schema / value-search payload is JSON text; structured content is a citation.
     text = _text_of(result)
     parsed = parse_json_text(text)
-    return parsed if parsed is not None else text
+    if parsed is not None:
+        return parsed
+    structured = _structured(result)
+    return structured if structured is not None else text
 
 
 def _classify_tool_error(message: str) -> PowerBIError | DaxQueryError:

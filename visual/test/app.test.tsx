@@ -76,6 +76,18 @@ describe("App", () => {
         );
     });
 
+    it("never relies on form submission (blocked in Power BI's sandboxed visual frame)", async () => {
+        const client = fakeClient();
+        const { container } = renderApp({ client });
+        await screen.findByText("Signed in as User A");
+
+        expect(container.querySelector("form")).toBeNull();
+        expect(container.querySelector('button[type="submit"]')).toBeNull();
+        fireEvent.change(screen.getByLabelText("Ask a question about your data"), { target: { value: "GOLD sales?" } });
+        fireEvent.click(screen.getByLabelText("Send question"));
+        await waitFor(() => expect(client.ask).toHaveBeenCalledTimes(1));
+    });
+
     it("restores the stored conversation", async () => {
         const client = fakeClient({
             getSession: vi.fn(async () => ({

@@ -30,6 +30,8 @@ class FakeFabricIq:
     omit_tools: set[str] = field(default_factory=set)
     # A query containing a key fails with that key's message (e.g. an unknown measure).
     dax_errors: dict[str, str] = field(default_factory=dict)
+    # Real Fabric IQ (spike S3) reports a failing query as a normal text result, not a tool error.
+    dax_errors_as_text: bool = False
     requests: list[dict[str, str]] = field(default_factory=list)
     calls: list[tuple[str, dict[str, Any]]] = field(default_factory=list)
 
@@ -52,6 +54,8 @@ class FakeFabricIq:
                 )
                 for marker, message in self.dax_errors.items():
                     if any(marker in query for query in daxQueries):
+                        if self.dax_errors_as_text:
+                            return message
                         raise ToolError(message)
                 if self.execute_mode.startswith("error:"):
                     raise ToolError(self.execute_mode.removeprefix("error:"))

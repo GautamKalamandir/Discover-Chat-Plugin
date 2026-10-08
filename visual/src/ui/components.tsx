@@ -146,14 +146,10 @@ export function Composer({
         onSend(question);
         setText("");
     };
+    // Not a <form>: Power BI's sandboxed visual frame blocks form submission, so a submit button
+    // would silently do nothing. Send is a plain button calling send() directly.
     return (
-        <form
-            className="composer"
-            onSubmit={(e) => {
-                e.preventDefault();
-                send();
-            }}
-        >
+        <div className="composer">
             <textarea
                 aria-label="Ask a question about your data"
                 placeholder="Ask a question about your data…"
@@ -173,10 +169,15 @@ export function Composer({
                     Stop
                 </button>
             ) : (
-                <button type="submit" disabled={!text.trim()} aria-label="Send question">
+                <button
+                    type="button"
+                    onClick={send}
+                    disabled={!text.trim()}
+                    aria-label="Send question"
+                >
                     Send
                 </button>
             )}
-        </form>
+        </div>
     );
 }

@@ -1,0 +1,5838 @@
+{
+  "schema": {
+    "Tables": [
+      {
+        "Name": "S1",
+        "Measures": [
+          {
+            "Name": "S2",
+            "Type": "Double",
+            "FormatString": "S3"
+          },
+          {
+            "Name": "S4",
+            "Type": "Double"
+          },
+          {
+            "Name": "S5",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S7",
+            "Type": "Double"
+          },
+          {
+            "Name": "S8",
+            "Type": "Double"
+          },
+          {
+            "Name": "S9",
+            "Type": "Integer",
+            "FormatString": "S6"
+          }
+        ],
+        "Columns": [
+          {
+            "Name": "S10",
+            "Type": "DateTime",
+            "FormatString": "S11",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S18",
+            "Type": "Text"
+          },
+          {
+            "Name": "S19",
+            "Type": "Text"
+          },
+          {
+            "Name": "S20",
+            "Type": "DateTime",
+            "FormatString": "S11",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S21",
+            "Type": "DateTime",
+            "FormatString": "S22",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S23",
+            "Type": "Text"
+          },
+          {
+            "Name": "S24",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S25",
+            "Type": "Text"
+          },
+          {
+            "Name": "S26",
+            "Type": "Text"
+          },
+          {
+            "Name": "S27",
+            "Type": "Text"
+          },
+          {
+            "Name": "S28",
+            "Type": "Text"
+          },
+          {
+            "Name": "S29",
+            "Type": "Text"
+          },
+          {
+            "Name": "S30",
+            "Type": "Text"
+          },
+          {
+            "Name": "S31",
+            "Type": "Text"
+          },
+          {
+            "Name": "S32",
+            "Type": "Text"
+          },
+          {
+            "Name": "S33",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S34",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S35",
+            "Type": "Text"
+          },
+          {
+            "Name": "S36",
+            "Type": "Text"
+          },
+          {
+            "Name": "S37",
+            "Type": "Text"
+          },
+          {
+            "Name": "S38",
+            "Type": "Text"
+          },
+          {
+            "Name": "S39",
+            "Type": "Text"
+          },
+          {
+            "Name": "S40",
+            "Type": "Text"
+          },
+          {
+            "Name": "S41",
+            "Type": "Text"
+          },
+          {
+            "Name": "S42",
+            "Type": "Text"
+          },
+          {
+            "Name": "S43",
+            "Type": "Text"
+          },
+          {
+            "Name": "S44",
+            "Type": "Text"
+          },
+          {
+            "Name": "S45",
+            "Type": "Text"
+          },
+          {
+            "Name": "S46",
+            "Type": "Text"
+          },
+          {
+            "Name": "S47",
+            "Type": "Text"
+          },
+          {
+            "Name": "S48",
+            "Type": "Text"
+          },
+          {
+            "Name": "S49",
+            "Type": "Text"
+          },
+          {
+            "Name": "S50",
+            "Type": "Text"
+          },
+          {
+            "Name": "S51",
+            "Type": "Text"
+          },
+          {
+            "Name": "S52",
+            "Type": "Text"
+          },
+          {
+            "Name": "S53",
+            "Type": "Text"
+          },
+          {
+            "Name": "S54",
+            "Type": "Text"
+          },
+          {
+            "Name": "S55",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S56",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S57",
+            "Type": "Double"
+          },
+          {
+            "Name": "S58",
+            "Type": "Double"
+          },
+          {
+            "Name": "S59",
+            "Type": "Double"
+          },
+          {
+            "Name": "S60",
+            "Type": "Double"
+          },
+          {
+            "Name": "S61",
+            "Type": "Double"
+          },
+          {
+            "Name": "S62",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S63",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S64",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S65",
+            "Type": "Double"
+          },
+          {
+            "Name": "S66",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S67",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S68",
+            "Type": "Double"
+          },
+          {
+            "Name": "S69",
+            "Type": "Double"
+          },
+          {
+            "Name": "S70",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S71",
+            "Type": "Double"
+          },
+          {
+            "Name": "S72",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S73",
+            "Type": "Double"
+          },
+          {
+            "Name": "S74",
+            "Type": "Double"
+          },
+          {
+            "Name": "S75",
+            "Type": "Double"
+          },
+          {
+            "Name": "S76",
+            "Type": "Double"
+          },
+          {
+            "Name": "S77",
+            "Type": "Double"
+          },
+          {
+            "Name": "S78",
+            "Type": "Double"
+          },
+          {
+            "Name": "S79",
+            "Type": "Double"
+          },
+          {
+            "Name": "S80",
+            "Type": "Double"
+          },
+          {
+            "Name": "S81",
+            "Type": "Double"
+          },
+          {
+            "Name": "S82",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S83",
+            "Type": "Double"
+          },
+          {
+            "Name": "S84",
+            "Type": "Double"
+          },
+          {
+            "Name": "S85",
+            "Type": "Double"
+          },
+          {
+            "Name": "S86",
+            "Type": "Double"
+          },
+          {
+            "Name": "S87",
+            "Type": "Double"
+          },
+          {
+            "Name": "S88",
+            "Type": "Double"
+          },
+          {
+            "Name": "S89",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S90",
+            "Type": "Double"
+          },
+          {
+            "Name": "S91",
+            "Type": "Double"
+          },
+          {
+            "Name": "S92",
+            "Type": "Double"
+          },
+          {
+            "Name": "S93",
+            "Type": "Double"
+          },
+          {
+            "Name": "S94",
+            "Type": "Double"
+          },
+          {
+            "Name": "S95",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S96",
+            "Type": "Text"
+          },
+          {
+            "Name": "S97",
+            "Type": "Text"
+          },
+          {
+            "Name": "S98",
+            "Type": "Text"
+          },
+          {
+            "Name": "S99",
+            "Type": "Text"
+          },
+          {
+            "Name": "S100",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S101",
+            "Type": "Text"
+          },
+          {
+            "Name": "S102",
+            "Type": "Text"
+          },
+          {
+            "Name": "S103",
+            "Type": "Text"
+          },
+          {
+            "Name": "S104",
+            "Type": "Text"
+          },
+          {
+            "Name": "S105",
+            "Type": "Text"
+          },
+          {
+            "Name": "S106",
+            "Type": "Text"
+          }
+        ]
+      },
+      {
+        "Name": "S107",
+        "Columns": [
+          {
+            "Name": "S10",
+            "Type": "DateTime",
+            "FormatString": "S11",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S18",
+            "Type": "Text"
+          },
+          {
+            "Name": "S19",
+            "Type": "Text"
+          },
+          {
+            "Name": "S20",
+            "Type": "DateTime",
+            "FormatString": "S11",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S21",
+            "Type": "DateTime",
+            "FormatString": "S22",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S23",
+            "Type": "Text"
+          },
+          {
+            "Name": "S24",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S25",
+            "Type": "Text"
+          },
+          {
+            "Name": "S26",
+            "Type": "Text"
+          },
+          {
+            "Name": "S27",
+            "Type": "Text"
+          },
+          {
+            "Name": "S28",
+            "Type": "Text"
+          },
+          {
+            "Name": "S29",
+            "Type": "Text"
+          },
+          {
+            "Name": "S30",
+            "Type": "Text"
+          },
+          {
+            "Name": "S31",
+            "Type": "Text"
+          },
+          {
+            "Name": "S32",
+            "Type": "Text"
+          },
+          {
+            "Name": "S33",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S34",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S35",
+            "Type": "Text"
+          },
+          {
+            "Name": "S36",
+            "Type": "Text"
+          },
+          {
+            "Name": "S37",
+            "Type": "Text"
+          },
+          {
+            "Name": "S38",
+            "Type": "Text"
+          },
+          {
+            "Name": "S39",
+            "Type": "Text"
+          },
+          {
+            "Name": "S40",
+            "Type": "Text"
+          },
+          {
+            "Name": "S41",
+            "Type": "Text"
+          },
+          {
+            "Name": "S42",
+            "Type": "Text"
+          },
+          {
+            "Name": "S43",
+            "Type": "Text"
+          },
+          {
+            "Name": "S44",
+            "Type": "Text"
+          },
+          {
+            "Name": "S45",
+            "Type": "Text"
+          },
+          {
+            "Name": "S46",
+            "Type": "Text"
+          },
+          {
+            "Name": "S47",
+            "Type": "Text"
+          },
+          {
+            "Name": "S48",
+            "Type": "Text"
+          },
+          {
+            "Name": "S49",
+            "Type": "Text"
+          },
+          {
+            "Name": "S50",
+            "Type": "Text"
+          },
+          {
+            "Name": "S51",
+            "Type": "Text"
+          },
+          {
+            "Name": "S52",
+            "Type": "Text"
+          },
+          {
+            "Name": "S53",
+            "Type": "Text"
+          },
+          {
+            "Name": "S54",
+            "Type": "Text"
+          },
+          {
+            "Name": "S55",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S56",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S57",
+            "Type": "Double"
+          },
+          {
+            "Name": "S58",
+            "Type": "Double"
+          },
+          {
+            "Name": "S59",
+            "Type": "Double"
+          },
+          {
+            "Name": "S60",
+            "Type": "Double"
+          },
+          {
+            "Name": "S61",
+            "Type": "Double"
+          },
+          {
+            "Name": "S62",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S63",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S64",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S65",
+            "Type": "Double"
+          },
+          {
+            "Name": "S66",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S67",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S68",
+            "Type": "Double"
+          },
+          {
+            "Name": "S69",
+            "Type": "Double"
+          },
+          {
+            "Name": "S70",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S71",
+            "Type": "Double"
+          },
+          {
+            "Name": "S72",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S73",
+            "Type": "Double"
+          },
+          {
+            "Name": "S74",
+            "Type": "Double"
+          },
+          {
+            "Name": "S75",
+            "Type": "Double"
+          },
+          {
+            "Name": "S76",
+            "Type": "Double"
+          },
+          {
+            "Name": "S77",
+            "Type": "Double"
+          },
+          {
+            "Name": "S78",
+            "Type": "Double"
+          },
+          {
+            "Name": "S79",
+            "Type": "Double"
+          },
+          {
+            "Name": "S80",
+            "Type": "Double"
+          },
+          {
+            "Name": "S81",
+            "Type": "Double"
+          },
+          {
+            "Name": "S82",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S83",
+            "Type": "Double"
+          },
+          {
+            "Name": "S84",
+            "Type": "Double"
+          },
+          {
+            "Name": "S85",
+            "Type": "Double"
+          },
+          {
+            "Name": "S86",
+            "Type": "Double"
+          },
+          {
+            "Name": "S87",
+            "Type": "Double"
+          },
+          {
+            "Name": "S88",
+            "Type": "Double"
+          },
+          {
+            "Name": "S89",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S90",
+            "Type": "Double"
+          },
+          {
+            "Name": "S91",
+            "Type": "Double"
+          },
+          {
+            "Name": "S92",
+            "Type": "Double"
+          },
+          {
+            "Name": "S93",
+            "Type": "Double"
+          },
+          {
+            "Name": "S94",
+            "Type": "Double"
+          },
+          {
+            "Name": "S95",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S96",
+            "Type": "Text"
+          },
+          {
+            "Name": "S97",
+            "Type": "Text"
+          },
+          {
+            "Name": "S98",
+            "Type": "Text"
+          },
+          {
+            "Name": "S99",
+            "Type": "Text"
+          },
+          {
+            "Name": "S100",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S101",
+            "Type": "Text"
+          },
+          {
+            "Name": "S102",
+            "Type": "Text"
+          },
+          {
+            "Name": "S103",
+            "Type": "Text"
+          },
+          {
+            "Name": "S104",
+            "Type": "Text"
+          },
+          {
+            "Name": "S105",
+            "Type": "Text"
+          },
+          {
+            "Name": "S106",
+            "Type": "Text"
+          }
+        ]
+      },
+      {
+        "Name": "S108",
+        "Columns": [
+          {
+            "Name": "S10",
+            "Type": "DateTime",
+            "FormatString": "S11",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S18",
+            "Type": "Text"
+          },
+          {
+            "Name": "S19",
+            "Type": "Text"
+          },
+          {
+            "Name": "S20",
+            "Type": "DateTime",
+            "FormatString": "S11",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S21",
+            "Type": "DateTime",
+            "FormatString": "S22",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S23",
+            "Type": "Text"
+          },
+          {
+            "Name": "S24",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S25",
+            "Type": "Text"
+          },
+          {
+            "Name": "S26",
+            "Type": "Text"
+          },
+          {
+            "Name": "S27",
+            "Type": "Text"
+          },
+          {
+            "Name": "S28",
+            "Type": "Text"
+          },
+          {
+            "Name": "S29",
+            "Type": "Text"
+          },
+          {
+            "Name": "S30",
+            "Type": "Text"
+          },
+          {
+            "Name": "S31",
+            "Type": "Text"
+          },
+          {
+            "Name": "S32",
+            "Type": "Text"
+          },
+          {
+            "Name": "S33",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S34",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S35",
+            "Type": "Text"
+          },
+          {
+            "Name": "S36",
+            "Type": "Text"
+          },
+          {
+            "Name": "S37",
+            "Type": "Text"
+          },
+          {
+            "Name": "S38",
+            "Type": "Text"
+          },
+          {
+            "Name": "S39",
+            "Type": "Text"
+          },
+          {
+            "Name": "S40",
+            "Type": "Text"
+          },
+          {
+            "Name": "S41",
+            "Type": "Text"
+          },
+          {
+            "Name": "S42",
+            "Type": "Text"
+          },
+          {
+            "Name": "S43",
+            "Type": "Text"
+          },
+          {
+            "Name": "S44",
+            "Type": "Text"
+          },
+          {
+            "Name": "S45",
+            "Type": "Text"
+          },
+          {
+            "Name": "S46",
+            "Type": "Text"
+          },
+          {
+            "Name": "S47",
+            "Type": "Text"
+          },
+          {
+            "Name": "S48",
+            "Type": "Text"
+          },
+          {
+            "Name": "S49",
+            "Type": "Text"
+          },
+          {
+            "Name": "S50",
+            "Type": "Text"
+          },
+          {
+            "Name": "S51",
+            "Type": "Text"
+          },
+          {
+            "Name": "S52",
+            "Type": "Text"
+          },
+          {
+            "Name": "S53",
+            "Type": "Text"
+          },
+          {
+            "Name": "S54",
+            "Type": "Text"
+          },
+          {
+            "Name": "S55",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S56",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S57",
+            "Type": "Double"
+          },
+          {
+            "Name": "S58",
+            "Type": "Double"
+          },
+          {
+            "Name": "S59",
+            "Type": "Double"
+          },
+          {
+            "Name": "S60",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S61",
+            "Type": "Double"
+          },
+          {
+            "Name": "S62",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S63",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S64",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S65",
+            "Type": "Double"
+          },
+          {
+            "Name": "S66",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S67",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S68",
+            "Type": "Double"
+          },
+          {
+            "Name": "S69",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S70",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S71",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S72",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S73",
+            "Type": "Double"
+          },
+          {
+            "Name": "S74",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S75",
+            "Type": "Double"
+          },
+          {
+            "Name": "S76",
+            "Type": "Double"
+          },
+          {
+            "Name": "S77",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S78",
+            "Type": "Double"
+          },
+          {
+            "Name": "S79",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S80",
+            "Type": "Double"
+          },
+          {
+            "Name": "S81",
+            "Type": "Double"
+          },
+          {
+            "Name": "S82",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S83",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S84",
+            "Type": "Double"
+          },
+          {
+            "Name": "S85",
+            "Type": "Double"
+          },
+          {
+            "Name": "S86",
+            "Type": "Double"
+          },
+          {
+            "Name": "S87",
+            "Type": "Double"
+          },
+          {
+            "Name": "S88",
+            "Type": "Double"
+          },
+          {
+            "Name": "S89",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S90",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S91",
+            "Type": "Double"
+          },
+          {
+            "Name": "S92",
+            "Type": "Double"
+          },
+          {
+            "Name": "S93",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S94",
+            "Type": "Double"
+          },
+          {
+            "Name": "S95",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S96",
+            "Type": "Text"
+          },
+          {
+            "Name": "S97",
+            "Type": "Text"
+          },
+          {
+            "Name": "S98",
+            "Type": "Text"
+          },
+          {
+            "Name": "S109",
+            "Type": "Integer"
+          },
+          {
+            "Name": "S101",
+            "Type": "Text"
+          },
+          {
+            "Name": "S102",
+            "Type": "Text"
+          },
+          {
+            "Name": "S103",
+            "Type": "Text"
+          },
+          {
+            "Name": "S105",
+            "Type": "Text"
+          }
+        ]
+      },
+      {
+        "Name": "S110",
+        "Columns": [
+          {
+            "Name": "S10",
+            "Type": "DateTime",
+            "FormatString": "S11",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S18",
+            "Type": "Text"
+          },
+          {
+            "Name": "S19",
+            "Type": "Text"
+          },
+          {
+            "Name": "S20",
+            "Type": "DateTime",
+            "FormatString": "S11",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S21",
+            "Type": "DateTime",
+            "FormatString": "S22",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S23",
+            "Type": "Text"
+          },
+          {
+            "Name": "S24",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S25",
+            "Type": "Text"
+          },
+          {
+            "Name": "S26",
+            "Type": "Text"
+          },
+          {
+            "Name": "S27",
+            "Type": "Text"
+          },
+          {
+            "Name": "S28",
+            "Type": "Text"
+          },
+          {
+            "Name": "S29",
+            "Type": "Text"
+          },
+          {
+            "Name": "S30",
+            "Type": "Text"
+          },
+          {
+            "Name": "S31",
+            "Type": "Text"
+          },
+          {
+            "Name": "S32",
+            "Type": "Text"
+          },
+          {
+            "Name": "S33",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S100",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S35",
+            "Type": "Text"
+          },
+          {
+            "Name": "S36",
+            "Type": "Text"
+          },
+          {
+            "Name": "S37",
+            "Type": "Text"
+          },
+          {
+            "Name": "S38",
+            "Type": "Text"
+          },
+          {
+            "Name": "S39",
+            "Type": "Text"
+          },
+          {
+            "Name": "S40",
+            "Type": "Text"
+          },
+          {
+            "Name": "S41",
+            "Type": "Text"
+          },
+          {
+            "Name": "S42",
+            "Type": "Text"
+          },
+          {
+            "Name": "S43",
+            "Type": "Text"
+          },
+          {
+            "Name": "S44",
+            "Type": "Text"
+          },
+          {
+            "Name": "S45",
+            "Type": "Text"
+          },
+          {
+            "Name": "S46",
+            "Type": "Text"
+          },
+          {
+            "Name": "S47",
+            "Type": "Text"
+          },
+          {
+            "Name": "S48",
+            "Type": "Text"
+          },
+          {
+            "Name": "S49",
+            "Type": "Text"
+          },
+          {
+            "Name": "S50",
+            "Type": "Text"
+          },
+          {
+            "Name": "S51",
+            "Type": "Text"
+          },
+          {
+            "Name": "S52",
+            "Type": "Text"
+          },
+          {
+            "Name": "S53",
+            "Type": "Text"
+          },
+          {
+            "Name": "S54",
+            "Type": "Text"
+          },
+          {
+            "Name": "S55",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S56",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S57",
+            "Type": "Double"
+          },
+          {
+            "Name": "S58",
+            "Type": "Double"
+          },
+          {
+            "Name": "S59",
+            "Type": "Double"
+          },
+          {
+            "Name": "S60",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S61",
+            "Type": "Double"
+          },
+          {
+            "Name": "S62",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S63",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S64",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S65",
+            "Type": "Double"
+          },
+          {
+            "Name": "S66",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S67",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S68",
+            "Type": "Double"
+          },
+          {
+            "Name": "S69",
+            "Type": "Double"
+          },
+          {
+            "Name": "S70",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S71",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S72",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S73",
+            "Type": "Double"
+          },
+          {
+            "Name": "S74",
+            "Type": "Double"
+          },
+          {
+            "Name": "S75",
+            "Type": "Double"
+          },
+          {
+            "Name": "S76",
+            "Type": "Double"
+          },
+          {
+            "Name": "S77",
+            "Type": "Double"
+          },
+          {
+            "Name": "S78",
+            "Type": "Double"
+          },
+          {
+            "Name": "S79",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S80",
+            "Type": "Double"
+          },
+          {
+            "Name": "S81",
+            "Type": "Double"
+          },
+          {
+            "Name": "S82",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S83",
+            "Type": "Double"
+          },
+          {
+            "Name": "S84",
+            "Type": "Double"
+          },
+          {
+            "Name": "S85",
+            "Type": "Double"
+          },
+          {
+            "Name": "S86",
+            "Type": "Double"
+          },
+          {
+            "Name": "S87",
+            "Type": "Double"
+          },
+          {
+            "Name": "S88",
+            "Type": "Double"
+          },
+          {
+            "Name": "S89",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S90",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S91",
+            "Type": "Double"
+          },
+          {
+            "Name": "S92",
+            "Type": "Double"
+          },
+          {
+            "Name": "S93",
+            "Type": "Double"
+          },
+          {
+            "Name": "S94",
+            "Type": "Double"
+          },
+          {
+            "Name": "S95",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S96",
+            "Type": "Text"
+          },
+          {
+            "Name": "S97",
+            "Type": "Text"
+          },
+          {
+            "Name": "S98",
+            "Type": "Text"
+          },
+          {
+            "Name": "S101",
+            "Type": "Text"
+          },
+          {
+            "Name": "S102",
+            "Type": "Text"
+          },
+          {
+            "Name": "S103",
+            "Type": "Text"
+          },
+          {
+            "Name": "S105",
+            "Type": "Text"
+          },
+          {
+            "Name": "S106",
+            "Type": "Text"
+          }
+        ]
+      },
+      {
+        "Name": "S111",
+        "Columns": [
+          {
+            "Name": "S10",
+            "Type": "DateTime",
+            "FormatString": "S11",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S18",
+            "Type": "Text"
+          },
+          {
+            "Name": "S19",
+            "Type": "Text"
+          },
+          {
+            "Name": "S20",
+            "Type": "DateTime",
+            "FormatString": "S11",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S21",
+            "Type": "DateTime",
+            "FormatString": "S22",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S23",
+            "Type": "Text"
+          },
+          {
+            "Name": "S24",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S25",
+            "Type": "Text"
+          },
+          {
+            "Name": "S26",
+            "Type": "Text"
+          },
+          {
+            "Name": "S27",
+            "Type": "Text"
+          },
+          {
+            "Name": "S28",
+            "Type": "Text"
+          },
+          {
+            "Name": "S29",
+            "Type": "Text"
+          },
+          {
+            "Name": "S30",
+            "Type": "Text"
+          },
+          {
+            "Name": "S31",
+            "Type": "Text"
+          },
+          {
+            "Name": "S32",
+            "Type": "Text"
+          },
+          {
+            "Name": "S33",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S100",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S35",
+            "Type": "Text"
+          },
+          {
+            "Name": "S36",
+            "Type": "Text"
+          },
+          {
+            "Name": "S37",
+            "Type": "Text"
+          },
+          {
+            "Name": "S38",
+            "Type": "Text"
+          },
+          {
+            "Name": "S39",
+            "Type": "Text"
+          },
+          {
+            "Name": "S40",
+            "Type": "Text"
+          },
+          {
+            "Name": "S41",
+            "Type": "Text"
+          },
+          {
+            "Name": "S42",
+            "Type": "Text"
+          },
+          {
+            "Name": "S43",
+            "Type": "Text"
+          },
+          {
+            "Name": "S44",
+            "Type": "Text"
+          },
+          {
+            "Name": "S45",
+            "Type": "Text"
+          },
+          {
+            "Name": "S46",
+            "Type": "Text"
+          },
+          {
+            "Name": "S47",
+            "Type": "Text"
+          },
+          {
+            "Name": "S48",
+            "Type": "Text"
+          },
+          {
+            "Name": "S49",
+            "Type": "Text"
+          },
+          {
+            "Name": "S50",
+            "Type": "Text"
+          },
+          {
+            "Name": "S51",
+            "Type": "Text"
+          },
+          {
+            "Name": "S52",
+            "Type": "Text"
+          },
+          {
+            "Name": "S53",
+            "Type": "Text"
+          },
+          {
+            "Name": "S54",
+            "Type": "Text"
+          },
+          {
+            "Name": "S55",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S56",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S57",
+            "Type": "Double"
+          },
+          {
+            "Name": "S58",
+            "Type": "Double"
+          },
+          {
+            "Name": "S59",
+            "Type": "Double"
+          },
+          {
+            "Name": "S60",
+            "Type": "Double"
+          },
+          {
+            "Name": "S61",
+            "Type": "Double"
+          },
+          {
+            "Name": "S62",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S63",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S64",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S65",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S66",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S67",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S68",
+            "Type": "Double"
+          },
+          {
+            "Name": "S69",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S70",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S71",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S72",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S73",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S74",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S75",
+            "Type": "Double"
+          },
+          {
+            "Name": "S76",
+            "Type": "Double"
+          },
+          {
+            "Name": "S77",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S78",
+            "Type": "Double"
+          },
+          {
+            "Name": "S79",
+            "Type": "Double"
+          },
+          {
+            "Name": "S80",
+            "Type": "Double"
+          },
+          {
+            "Name": "S81",
+            "Type": "Double"
+          },
+          {
+            "Name": "S82",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S83",
+            "Type": "Double"
+          },
+          {
+            "Name": "S84",
+            "Type": "Double"
+          },
+          {
+            "Name": "S85",
+            "Type": "Double"
+          },
+          {
+            "Name": "S86",
+            "Type": "Double"
+          },
+          {
+            "Name": "S87",
+            "Type": "Double"
+          },
+          {
+            "Name": "S88",
+            "Type": "Double"
+          },
+          {
+            "Name": "S89",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S90",
+            "Type": "Double"
+          },
+          {
+            "Name": "S91",
+            "Type": "Double"
+          },
+          {
+            "Name": "S92",
+            "Type": "Double"
+          },
+          {
+            "Name": "S93",
+            "Type": "Double"
+          },
+          {
+            "Name": "S94",
+            "Type": "Double"
+          },
+          {
+            "Name": "S95",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S96",
+            "Type": "Text"
+          },
+          {
+            "Name": "S97",
+            "Type": "Text"
+          },
+          {
+            "Name": "S98",
+            "Type": "Text"
+          },
+          {
+            "Name": "S101",
+            "Type": "Text"
+          },
+          {
+            "Name": "S102",
+            "Type": "Text"
+          },
+          {
+            "Name": "S103",
+            "Type": "Text"
+          },
+          {
+            "Name": "S105",
+            "Type": "Text"
+          },
+          {
+            "Name": "S106",
+            "Type": "Text"
+          }
+        ]
+      },
+      {
+        "Name": "S112",
+        "Measures": [
+          {
+            "Name": "S113",
+            "Type": "Double",
+            "FormatString": "S114"
+          },
+          {
+            "Name": "S115",
+            "Type": "Double",
+            "FormatString": "S114"
+          }
+        ],
+        "Columns": [
+          {
+            "Name": "S116",
+            "Type": "Text"
+          },
+          {
+            "Name": "S117",
+            "Type": "Double"
+          },
+          {
+            "Name": "S118",
+            "Type": "Double"
+          },
+          {
+            "Name": "S119",
+            "Type": "Text"
+          },
+          {
+            "Name": "S120",
+            "Type": "Text"
+          },
+          {
+            "Name": "S121",
+            "Type": "Text"
+          },
+          {
+            "Name": "S122",
+            "Type": "Text"
+          },
+          {
+            "Name": "S123",
+            "Type": "Text"
+          },
+          {
+            "Name": "S124",
+            "Type": "Text"
+          },
+          {
+            "Name": "S125",
+            "Type": "Text"
+          },
+          {
+            "Name": "S126",
+            "Type": "Text"
+          },
+          {
+            "Name": "S127",
+            "Type": "Text"
+          },
+          {
+            "Name": "S128",
+            "Type": "Text"
+          },
+          {
+            "Name": "S129",
+            "Type": "Text"
+          }
+        ]
+      },
+      {
+        "Name": "S130",
+        "Columns": [
+          {
+            "Name": "S131",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S132",
+            "Type": "DateTime",
+            "FormatString": "S11",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S133",
+            "Type": "Text"
+          },
+          {
+            "Name": "S134",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S135",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S136",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S137",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S138",
+            "Type": "Double"
+          },
+          {
+            "Name": "S139",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S140",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S141",
+            "Type": "Double"
+          }
+        ]
+      },
+      {
+        "Name": "S142",
+        "Columns": [
+          {
+            "Name": "S132",
+            "Type": "DateTime",
+            "FormatString": "S11",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S143",
+            "Type": "Text"
+          },
+          {
+            "Name": "S133",
+            "Type": "Text"
+          },
+          {
+            "Name": "S144",
+            "Type": "Text"
+          },
+          {
+            "Name": "S28",
+            "Type": "Text"
+          },
+          {
+            "Name": "S145",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S146",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S147",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S148",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S149",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S150",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S151",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S152",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S153",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S136",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S154",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S155",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S156",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S157",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S158",
+            "Type": "Text"
+          },
+          {
+            "Name": "S159",
+            "Type": "Text"
+          },
+          {
+            "Name": "S160",
+            "Type": "Text"
+          },
+          {
+            "Name": "S139",
+            "Type": "Text"
+          },
+          {
+            "Name": "S161",
+            "Type": "Text"
+          },
+          {
+            "Name": "S162",
+            "Type": "Text"
+          },
+          {
+            "Name": "S163",
+            "Type": "Text"
+          },
+          {
+            "Name": "S164",
+            "Type": "Text"
+          },
+          {
+            "Name": "S165",
+            "Type": "Text"
+          },
+          {
+            "Name": "S166",
+            "Type": "Text"
+          },
+          {
+            "Name": "S167",
+            "Type": "Text"
+          }
+        ]
+      },
+      {
+        "Name": "S168",
+        "Columns": [
+          {
+            "Name": "S169",
+            "Type": "Text"
+          },
+          {
+            "Name": "S170",
+            "Type": "Text"
+          },
+          {
+            "Name": "S98",
+            "Type": "Text"
+          },
+          {
+            "Name": "S14",
+            "Type": "Text"
+          },
+          {
+            "Name": "S171",
+            "Type": "Integer",
+            "FormatString": "S6"
+          }
+        ]
+      },
+      {
+        "Name": "S172",
+        "Measures": [
+          {
+            "Name": "S173",
+            "Type": "Integer",
+            "FormatString": "S114"
+          }
+        ],
+        "Columns": [
+          {
+            "Name": "S133",
+            "Type": "Text"
+          },
+          {
+            "Name": "S174",
+            "Type": "Text"
+          },
+          {
+            "Name": "S159",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S175",
+            "Type": "Text"
+          }
+        ]
+      },
+      {
+        "Name": "S176",
+        "Columns": [
+          {
+            "Name": "S177",
+            "Type": "Text"
+          },
+          {
+            "Name": "S37",
+            "Type": "Text"
+          },
+          {
+            "Name": "S38",
+            "Type": "Text"
+          },
+          {
+            "Name": "S170",
+            "Type": "Text"
+          },
+          {
+            "Name": "S40",
+            "Type": "Text"
+          },
+          {
+            "Name": "S41",
+            "Type": "Text"
+          },
+          {
+            "Name": "S32",
+            "Type": "Text"
+          },
+          {
+            "Name": "S178",
+            "Type": "Text"
+          },
+          {
+            "Name": "S179",
+            "Type": "Text"
+          },
+          {
+            "Name": "S180",
+            "Type": "Text"
+          },
+          {
+            "Name": "S181",
+            "Type": "Text"
+          },
+          {
+            "Name": "S182",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S183",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S99",
+            "Type": "Text"
+          },
+          {
+            "Name": "S184",
+            "Type": "Text"
+          },
+          {
+            "Name": "S47",
+            "Type": "Text"
+          },
+          {
+            "Name": "S50",
+            "Type": "Text"
+          },
+          {
+            "Name": "S39",
+            "Type": "Text"
+          },
+          {
+            "Name": "S185",
+            "Type": "Text"
+          },
+          {
+            "Name": "S43",
+            "Type": "Text"
+          },
+          {
+            "Name": "S44",
+            "Type": "Text"
+          },
+          {
+            "Name": "S45",
+            "Type": "Text"
+          },
+          {
+            "Name": "S46",
+            "Type": "Text"
+          },
+          {
+            "Name": "S49",
+            "Type": "Text"
+          },
+          {
+            "Name": "S35",
+            "Type": "Text"
+          },
+          {
+            "Name": "S54",
+            "Type": "Text"
+          },
+          {
+            "Name": "S53",
+            "Type": "Text"
+          },
+          {
+            "Name": "S34",
+            "Type": "Integer",
+            "FormatString": "S6"
+          }
+        ]
+      },
+      {
+        "Name": "S186",
+        "Measures": [
+          {
+            "Name": "S187",
+            "Type": "Double",
+            "FormatString": "S114"
+          },
+          {
+            "Name": "S188",
+            "Type": "Integer",
+            "FormatString": "S6"
+          }
+        ],
+        "Columns": [
+          {
+            "Name": "S189",
+            "Type": "Text"
+          },
+          {
+            "Name": "S186",
+            "Type": "Integer",
+            "FormatString": "S6"
+          }
+        ]
+      },
+      {
+        "Name": "S190",
+        "Columns": [
+          {
+            "Name": "S98",
+            "Type": "Text"
+          },
+          {
+            "Name": "S191",
+            "Type": "Double"
+          },
+          {
+            "Name": "S192",
+            "Type": "Double",
+            "FormatString": "S193"
+          }
+        ]
+      },
+      {
+        "Name": "S194",
+        "Measures": [
+          {
+            "Name": "S195",
+            "Type": "Integer",
+            "FormatString": "S114"
+          },
+          {
+            "Name": "S196",
+            "Type": "Integer",
+            "FormatString": "S114"
+          },
+          {
+            "Name": "S197",
+            "Type": "Integer",
+            "FormatString": "S114"
+          },
+          {
+            "Name": "S198",
+            "Type": "DateTime",
+            "FormatString": "S22"
+          },
+          {
+            "Name": "S199",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S200",
+            "Type": "Integer",
+            "FormatString": "S114"
+          },
+          {
+            "Name": "S201",
+            "Type": "Integer",
+            "FormatString": "S114"
+          },
+          {
+            "Name": "S202",
+            "Type": "Integer",
+            "FormatString": "S114"
+          },
+          {
+            "Name": "S203",
+            "Type": "Double",
+            "FormatString": "S193"
+          },
+          {
+            "Name": "S204",
+            "Type": "Double",
+            "FormatString": "S193"
+          }
+        ],
+        "Columns": [
+          {
+            "Name": "S19",
+            "Type": "Text"
+          },
+          {
+            "Name": "S205",
+            "Type": "Text"
+          },
+          {
+            "Name": "S206",
+            "Type": "DateTime",
+            "FormatString": "S11",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S135",
+            "Type": "Integer",
+            "FormatString": "S114"
+          },
+          {
+            "Name": "S207",
+            "Type": "DateTime",
+            "FormatString": "S11",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S208",
+            "Type": "Text"
+          },
+          {
+            "Name": "S209",
+            "Type": "Text"
+          },
+          {
+            "Name": "S210",
+            "Type": "Text"
+          },
+          {
+            "Name": "S211",
+            "Type": "Text"
+          },
+          {
+            "Name": "S212",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S213",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S214",
+            "Type": "Text"
+          },
+          {
+            "Name": "S98",
+            "Type": "Text"
+          }
+        ]
+      },
+      {
+        "Name": "S215",
+        "Measures": [
+          {
+            "Name": "S216",
+            "Type": "Double",
+            "FormatString": "S114"
+          },
+          {
+            "Name": "S217",
+            "Type": "Double"
+          },
+          {
+            "Name": "S218",
+            "Type": "Double",
+            "FormatString": "S114"
+          },
+          {
+            "Name": "S219",
+            "Type": "Double"
+          },
+          {
+            "Name": "S220",
+            "Type": "Double"
+          },
+          {
+            "Name": "S221",
+            "Type": "Double",
+            "FormatString": "S222"
+          },
+          {
+            "Name": "S223",
+            "Type": "Double",
+            "FormatString": "S222"
+          },
+          {
+            "Name": "S224",
+            "Type": "Double",
+            "FormatString": "S222"
+          },
+          {
+            "Name": "S225",
+            "Type": "Double",
+            "FormatString": "S226"
+          },
+          {
+            "Name": "S227",
+            "Type": "Double",
+            "FormatString": "S226"
+          },
+          {
+            "Name": "S228",
+            "Type": "Double"
+          },
+          {
+            "Name": "S229",
+            "Type": "Text"
+          },
+          {
+            "Name": "S230",
+            "Type": "Text"
+          },
+          {
+            "Name": "S231",
+            "Type": "Double"
+          },
+          {
+            "Name": "S232",
+            "Type": "Double"
+          },
+          {
+            "Name": "S233",
+            "Type": "Double"
+          },
+          {
+            "Name": "S234",
+            "Type": "Double"
+          },
+          {
+            "Name": "S235",
+            "Type": "Double",
+            "FormatString": "S226"
+          },
+          {
+            "Name": "S236",
+            "Type": "Text"
+          },
+          {
+            "Name": "S237",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S238",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S239",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S240",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S241",
+            "Type": "Double",
+            "FormatString": "S226"
+          },
+          {
+            "Name": "S242",
+            "Type": "Text"
+          },
+          {
+            "Name": "S117",
+            "Type": "Double"
+          },
+          {
+            "Name": "S243",
+            "Type": "Double"
+          },
+          {
+            "Name": "S244",
+            "Type": "Double"
+          },
+          {
+            "Name": "S245",
+            "Type": "Double"
+          },
+          {
+            "Name": "S246",
+            "Type": "Double"
+          },
+          {
+            "Name": "S247",
+            "Type": "Double"
+          },
+          {
+            "Name": "S248",
+            "Type": "Double"
+          },
+          {
+            "Name": "S249",
+            "Type": "Double"
+          },
+          {
+            "Name": "S250",
+            "Type": "Double"
+          },
+          {
+            "Name": "S251",
+            "Type": "Double"
+          },
+          {
+            "Name": "S252",
+            "Type": "Double"
+          },
+          {
+            "Name": "S253",
+            "Type": "Double"
+          },
+          {
+            "Name": "S254",
+            "Type": "Double"
+          },
+          {
+            "Name": "S255",
+            "Type": "Double",
+            "FormatString": "S226"
+          },
+          {
+            "Name": "S256",
+            "Type": "Text"
+          },
+          {
+            "Name": "S257",
+            "Type": "Double"
+          },
+          {
+            "Name": "S258",
+            "Type": "Double"
+          },
+          {
+            "Name": "S259",
+            "Type": "Double"
+          },
+          {
+            "Name": "S260",
+            "Type": "Double",
+            "FormatString": "S226"
+          },
+          {
+            "Name": "S261",
+            "Type": "Text"
+          },
+          {
+            "Name": "S262",
+            "Type": "Double"
+          },
+          {
+            "Name": "S263",
+            "Type": "Double"
+          },
+          {
+            "Name": "S264",
+            "Type": "Double"
+          },
+          {
+            "Name": "S265",
+            "Type": "Text"
+          },
+          {
+            "Name": "S266",
+            "Type": "Double",
+            "FormatString": "S226"
+          },
+          {
+            "Name": "S267",
+            "Type": "Double"
+          },
+          {
+            "Name": "S268",
+            "Type": "Double"
+          },
+          {
+            "Name": "S269",
+            "Type": "Double"
+          },
+          {
+            "Name": "S270",
+            "Type": "Integer",
+            "FormatString": "S114"
+          },
+          {
+            "Name": "S271",
+            "Type": "Double",
+            "FormatString": "S114"
+          },
+          {
+            "Name": "S272",
+            "Type": "Double",
+            "FormatString": "S193"
+          },
+          {
+            "Name": "S273",
+            "Type": "Double"
+          },
+          {
+            "Name": "S274",
+            "Type": "Double"
+          },
+          {
+            "Name": "S275",
+            "Type": "Double"
+          },
+          {
+            "Name": "S276",
+            "Type": "Double"
+          },
+          {
+            "Name": "S277",
+            "Type": "Double",
+            "FormatString": "S226"
+          },
+          {
+            "Name": "S278",
+            "Type": "Text"
+          },
+          {
+            "Name": "S279",
+            "Type": "Double"
+          },
+          {
+            "Name": "S280",
+            "Type": "Double",
+            "FormatString": "S193"
+          },
+          {
+            "Name": "S281",
+            "Type": "Double",
+            "FormatString": "S193"
+          },
+          {
+            "Name": "S282",
+            "Type": "Double",
+            "FormatString": "S193"
+          },
+          {
+            "Name": "S283",
+            "Type": "Double",
+            "FormatString": "S193"
+          },
+          {
+            "Name": "S284",
+            "Type": "Double",
+            "FormatString": "S193"
+          },
+          {
+            "Name": "S285",
+            "Type": "Double",
+            "FormatString": "S193"
+          },
+          {
+            "Name": "S286",
+            "Type": "Double",
+            "FormatString": "S193"
+          },
+          {
+            "Name": "S287",
+            "Type": "Double",
+            "FormatString": "S193"
+          }
+        ],
+        "Columns": [
+          {
+            "Name": "S10",
+            "Type": "DateTime",
+            "FormatString": "S11",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S18",
+            "Type": "Text"
+          },
+          {
+            "Name": "S19",
+            "Type": "Text"
+          },
+          {
+            "Name": "S20",
+            "Type": "DateTime",
+            "FormatString": "S11",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S21",
+            "Type": "DateTime",
+            "FormatString": "S22",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S23",
+            "Type": "Text"
+          },
+          {
+            "Name": "S24",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S25",
+            "Type": "Text"
+          },
+          {
+            "Name": "S26",
+            "Type": "Text"
+          },
+          {
+            "Name": "S27",
+            "Type": "Text"
+          },
+          {
+            "Name": "S28",
+            "Type": "Text"
+          },
+          {
+            "Name": "S29",
+            "Type": "Text"
+          },
+          {
+            "Name": "S30",
+            "Type": "Text"
+          },
+          {
+            "Name": "S31",
+            "Type": "Text"
+          },
+          {
+            "Name": "S32",
+            "Type": "Text"
+          },
+          {
+            "Name": "S33",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S34",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S35",
+            "Type": "Text"
+          },
+          {
+            "Name": "S36",
+            "Type": "Text"
+          },
+          {
+            "Name": "S37",
+            "Type": "Text"
+          },
+          {
+            "Name": "S38",
+            "Type": "Text"
+          },
+          {
+            "Name": "S39",
+            "Type": "Text"
+          },
+          {
+            "Name": "S40",
+            "Type": "Text"
+          },
+          {
+            "Name": "S41",
+            "Type": "Text"
+          },
+          {
+            "Name": "S42",
+            "Type": "Text"
+          },
+          {
+            "Name": "S43",
+            "Type": "Text"
+          },
+          {
+            "Name": "S44",
+            "Type": "Text"
+          },
+          {
+            "Name": "S45",
+            "Type": "Text"
+          },
+          {
+            "Name": "S46",
+            "Type": "Text"
+          },
+          {
+            "Name": "S47",
+            "Type": "Text"
+          },
+          {
+            "Name": "S48",
+            "Type": "Text"
+          },
+          {
+            "Name": "S49",
+            "Type": "Text"
+          },
+          {
+            "Name": "S50",
+            "Type": "Text"
+          },
+          {
+            "Name": "S51",
+            "Type": "Text"
+          },
+          {
+            "Name": "S52",
+            "Type": "Text"
+          },
+          {
+            "Name": "S53",
+            "Type": "Text"
+          },
+          {
+            "Name": "S54",
+            "Type": "Text"
+          },
+          {
+            "Name": "S55",
+            "Type": "Integer",
+            "FormatString": "S114"
+          },
+          {
+            "Name": "S56",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S57",
+            "Type": "Double"
+          },
+          {
+            "Name": "S58",
+            "Type": "Double",
+            "FormatString": "S3"
+          },
+          {
+            "Name": "S59",
+            "Type": "Double"
+          },
+          {
+            "Name": "S60",
+            "Type": "Double"
+          },
+          {
+            "Name": "S61",
+            "Type": "Double"
+          },
+          {
+            "Name": "S62",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S63",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S64",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S65",
+            "Type": "Double"
+          },
+          {
+            "Name": "S66",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S67",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S68",
+            "Type": "Double"
+          },
+          {
+            "Name": "S69",
+            "Type": "Double"
+          },
+          {
+            "Name": "S70",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S71",
+            "Type": "Double"
+          },
+          {
+            "Name": "S72",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S73",
+            "Type": "Double"
+          },
+          {
+            "Name": "S74",
+            "Type": "Double"
+          },
+          {
+            "Name": "S75",
+            "Type": "Double"
+          },
+          {
+            "Name": "S76",
+            "Type": "Double"
+          },
+          {
+            "Name": "S77",
+            "Type": "Double"
+          },
+          {
+            "Name": "S78",
+            "Type": "Double"
+          },
+          {
+            "Name": "S79",
+            "Type": "Double",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S80",
+            "Type": "Double"
+          },
+          {
+            "Name": "S81",
+            "Type": "Double"
+          },
+          {
+            "Name": "S82",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S83",
+            "Type": "Double"
+          },
+          {
+            "Name": "S84",
+            "Type": "Double"
+          },
+          {
+            "Name": "S85",
+            "Type": "Double"
+          },
+          {
+            "Name": "S86",
+            "Type": "Double"
+          },
+          {
+            "Name": "S87",
+            "Type": "Double"
+          },
+          {
+            "Name": "S88",
+            "Type": "Double"
+          },
+          {
+            "Name": "S89",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S90",
+            "Type": "Double",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S91",
+            "Type": "Double"
+          },
+          {
+            "Name": "S92",
+            "Type": "Double"
+          },
+          {
+            "Name": "S93",
+            "Type": "Double"
+          },
+          {
+            "Name": "S94",
+            "Type": "Double"
+          },
+          {
+            "Name": "S95",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S96",
+            "Type": "Text"
+          },
+          {
+            "Name": "S97",
+            "Type": "Text"
+          },
+          {
+            "Name": "S98",
+            "Type": "Text"
+          },
+          {
+            "Name": "S100",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S99",
+            "Type": "Text"
+          },
+          {
+            "Name": "S288",
+            "Type": "Text"
+          },
+          {
+            "Name": "S184",
+            "Type": "Text"
+          },
+          {
+            "Name": "S177",
+            "Type": "Text"
+          },
+          {
+            "Name": "S178",
+            "Type": "Text"
+          },
+          {
+            "Name": "S289",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S290",
+            "Type": "Text"
+          },
+          {
+            "Name": "S291",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S292",
+            "Type": "Text"
+          },
+          {
+            "Name": "S293",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S294",
+            "Type": "Text"
+          },
+          {
+            "Name": "S295",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S101",
+            "Type": "Text"
+          },
+          {
+            "Name": "S102",
+            "Type": "Text"
+          },
+          {
+            "Name": "S103",
+            "Type": "Text"
+          },
+          {
+            "Name": "S296",
+            "Type": "Text"
+          },
+          {
+            "Name": "S297",
+            "Type": "Text"
+          },
+          {
+            "Name": "S105",
+            "Type": "Text"
+          },
+          {
+            "Name": "S298",
+            "Type": "Text"
+          },
+          {
+            "Name": "S106",
+            "Type": "Text"
+          },
+          {
+            "Name": "S299",
+            "Type": "Text"
+          },
+          {
+            "Name": "S300",
+            "Type": "Boolean",
+            "FormatString": "S301"
+          },
+          {
+            "Name": "S302",
+            "Type": "Boolean",
+            "FormatString": "S301"
+          }
+        ]
+      },
+      {
+        "Name": "S303",
+        "Columns": [
+          {
+            "Name": "S304",
+            "Type": "Text"
+          },
+          {
+            "Name": "S305",
+            "Type": "Text"
+          },
+          {
+            "Name": "S306",
+            "Type": "Text"
+          },
+          {
+            "Name": "S307",
+            "Type": "Text"
+          },
+          {
+            "Name": "S308",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S309",
+            "Type": "Text"
+          },
+          {
+            "Name": "S310",
+            "Type": "Text"
+          },
+          {
+            "Name": "S311",
+            "Type": "Text"
+          },
+          {
+            "Name": "S312",
+            "Type": "Text"
+          }
+        ]
+      },
+      {
+        "Name": "S313",
+        "Columns": [
+          {
+            "Name": "S314",
+            "Type": "Text"
+          },
+          {
+            "Name": "S315",
+            "Type": "Integer",
+            "FormatString": "S6"
+          }
+        ]
+      },
+      {
+        "Name": "S316",
+        "Measures": [
+          {
+            "Name": "S317",
+            "Type": "Integer",
+            "FormatString": "S114"
+          },
+          {
+            "Name": "S318",
+            "Type": "Integer",
+            "FormatString": "S114"
+          },
+          {
+            "Name": "S319",
+            "Type": "Double",
+            "FormatString": "S193"
+          },
+          {
+            "Name": "S320",
+            "Type": "Double",
+            "FormatString": "S193"
+          },
+          {
+            "Name": "S321",
+            "Type": "Double",
+            "FormatString": "S193"
+          },
+          {
+            "Name": "S322",
+            "Type": "Double",
+            "FormatString": "S193"
+          }
+        ],
+        "Columns": [
+          {
+            "Name": "S19",
+            "Type": "Text"
+          },
+          {
+            "Name": "S323",
+            "Type": "Text"
+          },
+          {
+            "Name": "S211",
+            "Type": "Text"
+          },
+          {
+            "Name": "S206",
+            "Type": "DateTime",
+            "FormatString": "S11",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S324",
+            "Type": "DateTime",
+            "FormatString": "S11",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S205",
+            "Type": "Text"
+          },
+          {
+            "Name": "S135",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S210",
+            "Type": "Text"
+          },
+          {
+            "Name": "S209",
+            "Type": "Text"
+          },
+          {
+            "Name": "S214",
+            "Type": "Text"
+          },
+          {
+            "Name": "S29",
+            "Type": "Text"
+          },
+          {
+            "Name": "S212",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S325",
+            "Type": "Double"
+          },
+          {
+            "Name": "S326",
+            "Type": "DateTime",
+            "FormatString": "S11",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S327",
+            "Type": "Integer",
+            "FormatString": "S114"
+          },
+          {
+            "Name": "S328",
+            "Type": "Text"
+          },
+          {
+            "Name": "S329",
+            "Type": "Text"
+          },
+          {
+            "Name": "S208",
+            "Type": "Text"
+          },
+          {
+            "Name": "S98",
+            "Type": "Text"
+          }
+        ]
+      },
+      {
+        "Name": "S330",
+        "Columns": [
+          {
+            "Name": "S10",
+            "Type": "DateTime",
+            "FormatString": "S11",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S18",
+            "Type": "Text"
+          },
+          {
+            "Name": "S19",
+            "Type": "Text"
+          },
+          {
+            "Name": "S20",
+            "Type": "DateTime",
+            "FormatString": "S11",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S21",
+            "Type": "DateTime",
+            "FormatString": "S22",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S23",
+            "Type": "Text"
+          },
+          {
+            "Name": "S24",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S25",
+            "Type": "Text"
+          },
+          {
+            "Name": "S26",
+            "Type": "Text"
+          },
+          {
+            "Name": "S27",
+            "Type": "Text"
+          },
+          {
+            "Name": "S28",
+            "Type": "Text"
+          },
+          {
+            "Name": "S29",
+            "Type": "Text"
+          },
+          {
+            "Name": "S30",
+            "Type": "Text"
+          },
+          {
+            "Name": "S31",
+            "Type": "Text"
+          },
+          {
+            "Name": "S32",
+            "Type": "Text"
+          },
+          {
+            "Name": "S33",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S34",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S35",
+            "Type": "Text"
+          },
+          {
+            "Name": "S36",
+            "Type": "Text"
+          },
+          {
+            "Name": "S37",
+            "Type": "Text"
+          },
+          {
+            "Name": "S38",
+            "Type": "Text"
+          },
+          {
+            "Name": "S39",
+            "Type": "Text"
+          },
+          {
+            "Name": "S40",
+            "Type": "Text"
+          },
+          {
+            "Name": "S41",
+            "Type": "Text"
+          },
+          {
+            "Name": "S42",
+            "Type": "Text"
+          },
+          {
+            "Name": "S43",
+            "Type": "Text"
+          },
+          {
+            "Name": "S44",
+            "Type": "Text"
+          },
+          {
+            "Name": "S45",
+            "Type": "Text"
+          },
+          {
+            "Name": "S46",
+            "Type": "Text"
+          },
+          {
+            "Name": "S47",
+            "Type": "Text"
+          },
+          {
+            "Name": "S48",
+            "Type": "Text"
+          },
+          {
+            "Name": "S49",
+            "Type": "Text"
+          },
+          {
+            "Name": "S50",
+            "Type": "Text"
+          },
+          {
+            "Name": "S51",
+            "Type": "Text"
+          },
+          {
+            "Name": "S52",
+            "Type": "Text"
+          },
+          {
+            "Name": "S53",
+            "Type": "Text"
+          },
+          {
+            "Name": "S54",
+            "Type": "Text"
+          },
+          {
+            "Name": "S55",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S56",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S57",
+            "Type": "Double"
+          },
+          {
+            "Name": "S58",
+            "Type": "Double"
+          },
+          {
+            "Name": "S59",
+            "Type": "Double"
+          },
+          {
+            "Name": "S60",
+            "Type": "Double",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S61",
+            "Type": "Double"
+          },
+          {
+            "Name": "S62",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S63",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S64",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S65",
+            "Type": "Double"
+          },
+          {
+            "Name": "S66",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S67",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S68",
+            "Type": "Double"
+          },
+          {
+            "Name": "S69",
+            "Type": "Double"
+          },
+          {
+            "Name": "S70",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S71",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S72",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S73",
+            "Type": "Double"
+          },
+          {
+            "Name": "S74",
+            "Type": "Double"
+          },
+          {
+            "Name": "S75",
+            "Type": "Double"
+          },
+          {
+            "Name": "S76",
+            "Type": "Double"
+          },
+          {
+            "Name": "S77",
+            "Type": "Double"
+          },
+          {
+            "Name": "S78",
+            "Type": "Double"
+          },
+          {
+            "Name": "S79",
+            "Type": "Double",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S80",
+            "Type": "Double"
+          },
+          {
+            "Name": "S81",
+            "Type": "Double"
+          },
+          {
+            "Name": "S82",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S83",
+            "Type": "Double"
+          },
+          {
+            "Name": "S84",
+            "Type": "Double"
+          },
+          {
+            "Name": "S85",
+            "Type": "Double"
+          },
+          {
+            "Name": "S86",
+            "Type": "Double"
+          },
+          {
+            "Name": "S87",
+            "Type": "Double"
+          },
+          {
+            "Name": "S88",
+            "Type": "Double"
+          },
+          {
+            "Name": "S89",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S90",
+            "Type": "Double",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S91",
+            "Type": "Double"
+          },
+          {
+            "Name": "S92",
+            "Type": "Double"
+          },
+          {
+            "Name": "S93",
+            "Type": "Double"
+          },
+          {
+            "Name": "S94",
+            "Type": "Double"
+          },
+          {
+            "Name": "S95",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S96",
+            "Type": "Text"
+          },
+          {
+            "Name": "S97",
+            "Type": "Text"
+          },
+          {
+            "Name": "S98",
+            "Type": "Text"
+          },
+          {
+            "Name": "S100",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S99",
+            "Type": "Text"
+          },
+          {
+            "Name": "S101",
+            "Type": "Text"
+          },
+          {
+            "Name": "S102",
+            "Type": "Text"
+          },
+          {
+            "Name": "S103",
+            "Type": "Text"
+          },
+          {
+            "Name": "S105",
+            "Type": "Text"
+          },
+          {
+            "Name": "S106",
+            "Type": "Text"
+          }
+        ]
+      },
+      {
+        "Name": "S331",
+        "Columns": [
+          {
+            "Name": "S10",
+            "Type": "DateTime",
+            "FormatString": "S11",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S18",
+            "Type": "Text"
+          },
+          {
+            "Name": "S19",
+            "Type": "Text"
+          },
+          {
+            "Name": "S20",
+            "Type": "DateTime",
+            "FormatString": "S11",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S21",
+            "Type": "DateTime",
+            "FormatString": "S22",
+            "VariationColumns": [
+              {
+                "Name": "Date",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S12",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S13",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S14",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S15",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S16",
+                "Type": null,
+                "SortByColumnName": null
+              },
+              {
+                "Name": "S17",
+                "Type": null,
+                "SortByColumnName": null
+              }
+            ]
+          },
+          {
+            "Name": "S23",
+            "Type": "Text"
+          },
+          {
+            "Name": "S24",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S25",
+            "Type": "Text"
+          },
+          {
+            "Name": "S26",
+            "Type": "Text"
+          },
+          {
+            "Name": "S27",
+            "Type": "Text"
+          },
+          {
+            "Name": "S28",
+            "Type": "Text"
+          },
+          {
+            "Name": "S29",
+            "Type": "Text"
+          },
+          {
+            "Name": "S30",
+            "Type": "Text"
+          },
+          {
+            "Name": "S31",
+            "Type": "Text"
+          },
+          {
+            "Name": "S32",
+            "Type": "Text"
+          },
+          {
+            "Name": "S33",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S34",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S35",
+            "Type": "Text"
+          },
+          {
+            "Name": "S36",
+            "Type": "Text"
+          },
+          {
+            "Name": "S37",
+            "Type": "Text"
+          },
+          {
+            "Name": "S38",
+            "Type": "Text"
+          },
+          {
+            "Name": "S39",
+            "Type": "Text"
+          },
+          {
+            "Name": "S40",
+            "Type": "Text"
+          },
+          {
+            "Name": "S41",
+            "Type": "Text"
+          },
+          {
+            "Name": "S42",
+            "Type": "Text"
+          },
+          {
+            "Name": "S43",
+            "Type": "Text"
+          },
+          {
+            "Name": "S44",
+            "Type": "Text"
+          },
+          {
+            "Name": "S45",
+            "Type": "Text"
+          },
+          {
+            "Name": "S46",
+            "Type": "Text"
+          },
+          {
+            "Name": "S47",
+            "Type": "Text"
+          },
+          {
+            "Name": "S48",
+            "Type": "Text"
+          },
+          {
+            "Name": "S49",
+            "Type": "Text"
+          },
+          {
+            "Name": "S50",
+            "Type": "Text"
+          },
+          {
+            "Name": "S51",
+            "Type": "Text"
+          },
+          {
+            "Name": "S52",
+            "Type": "Text"
+          },
+          {
+            "Name": "S53",
+            "Type": "Text"
+          },
+          {
+            "Name": "S54",
+            "Type": "Text"
+          },
+          {
+            "Name": "S55",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S56",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S57",
+            "Type": "Double"
+          },
+          {
+            "Name": "S58",
+            "Type": "Double"
+          },
+          {
+            "Name": "S59",
+            "Type": "Double"
+          },
+          {
+            "Name": "S60",
+            "Type": "Double"
+          },
+          {
+            "Name": "S61",
+            "Type": "Double"
+          },
+          {
+            "Name": "S62",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S63",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S64",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S65",
+            "Type": "Double"
+          },
+          {
+            "Name": "S66",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S67",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S68",
+            "Type": "Double"
+          },
+          {
+            "Name": "S69",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S70",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S71",
+            "Type": "Double"
+          },
+          {
+            "Name": "S72",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S73",
+            "Type": "Double"
+          },
+          {
+            "Name": "S74",
+            "Type": "Double"
+          },
+          {
+            "Name": "S75",
+            "Type": "Double"
+          },
+          {
+            "Name": "S76",
+            "Type": "Double"
+          },
+          {
+            "Name": "S77",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S78",
+            "Type": "Double"
+          },
+          {
+            "Name": "S79",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S80",
+            "Type": "Double"
+          },
+          {
+            "Name": "S81",
+            "Type": "Double"
+          },
+          {
+            "Name": "S82",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S83",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S84",
+            "Type": "Double"
+          },
+          {
+            "Name": "S85",
+            "Type": "Double"
+          },
+          {
+            "Name": "S86",
+            "Type": "Double"
+          },
+          {
+            "Name": "S87",
+            "Type": "Double"
+          },
+          {
+            "Name": "S88",
+            "Type": "Double"
+          },
+          {
+            "Name": "S89",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S90",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S91",
+            "Type": "Double"
+          },
+          {
+            "Name": "S92",
+            "Type": "Double"
+          },
+          {
+            "Name": "S93",
+            "Type": "Double"
+          },
+          {
+            "Name": "S94",
+            "Type": "Double"
+          },
+          {
+            "Name": "S95",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S96",
+            "Type": "Text"
+          },
+          {
+            "Name": "S97",
+            "Type": "Text"
+          },
+          {
+            "Name": "S98",
+            "Type": "Text"
+          },
+          {
+            "Name": "S99",
+            "Type": "Text"
+          },
+          {
+            "Name": "S101",
+            "Type": "Text"
+          },
+          {
+            "Name": "S102",
+            "Type": "Text"
+          },
+          {
+            "Name": "S103",
+            "Type": "Text"
+          },
+          {
+            "Name": "S104",
+            "Type": "Text"
+          },
+          {
+            "Name": "S105",
+            "Type": "Text"
+          }
+        ]
+      },
+      {
+        "Name": "S332",
+        "Measures": [
+          {
+            "Name": "S333",
+            "Type": "Double"
+          }
+        ],
+        "Columns": [
+          {
+            "Name": "S19",
+            "Type": "Text"
+          },
+          {
+            "Name": "S32",
+            "Type": "Text"
+          },
+          {
+            "Name": "S334",
+            "Type": "Text"
+          },
+          {
+            "Name": "S26",
+            "Type": "Text"
+          },
+          {
+            "Name": "S40",
+            "Type": "Text"
+          },
+          {
+            "Name": "S41",
+            "Type": "Text"
+          },
+          {
+            "Name": "S335",
+            "Type": "Text"
+          },
+          {
+            "Name": "S336",
+            "Type": "Text"
+          },
+          {
+            "Name": "S38",
+            "Type": "Text"
+          },
+          {
+            "Name": "S39",
+            "Type": "Text"
+          },
+          {
+            "Name": "S185",
+            "Type": "Text"
+          },
+          {
+            "Name": "S43",
+            "Type": "Text"
+          },
+          {
+            "Name": "S44",
+            "Type": "Text"
+          },
+          {
+            "Name": "S337",
+            "Type": "Text"
+          },
+          {
+            "Name": "S338",
+            "Type": "Text"
+          },
+          {
+            "Name": "S53",
+            "Type": "Text"
+          },
+          {
+            "Name": "S49",
+            "Type": "Text"
+          },
+          {
+            "Name": "S46",
+            "Type": "Text"
+          },
+          {
+            "Name": "S339",
+            "Type": "Text"
+          },
+          {
+            "Name": "S47",
+            "Type": "Text"
+          },
+          {
+            "Name": "S340",
+            "Type": "Text"
+          },
+          {
+            "Name": "S341",
+            "Type": "Text"
+          },
+          {
+            "Name": "S35",
+            "Type": "Text"
+          },
+          {
+            "Name": "S54",
+            "Type": "Text"
+          },
+          {
+            "Name": "S342",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S33",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S55",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S343",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S344",
+            "Type": "Double"
+          },
+          {
+            "Name": "S58",
+            "Type": "Double",
+            "FormatString": "S114"
+          },
+          {
+            "Name": "S345",
+            "Type": "Double"
+          },
+          {
+            "Name": "S64",
+            "Type": "Double"
+          },
+          {
+            "Name": "S65",
+            "Type": "Double"
+          },
+          {
+            "Name": "S67",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S68",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S346",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S347",
+            "Type": "Double"
+          },
+          {
+            "Name": "S348",
+            "Type": "Double"
+          },
+          {
+            "Name": "S73",
+            "Type": "Double"
+          },
+          {
+            "Name": "S349",
+            "Type": "Double"
+          },
+          {
+            "Name": "S350",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S92",
+            "Type": "Double"
+          },
+          {
+            "Name": "S351",
+            "Type": "Double"
+          },
+          {
+            "Name": "S352",
+            "Type": "Text"
+          },
+          {
+            "Name": "S177",
+            "Type": "Text"
+          },
+          {
+            "Name": "S290",
+            "Type": "Text"
+          },
+          {
+            "Name": "S291",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S178",
+            "Type": "Text"
+          },
+          {
+            "Name": "S289",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S288",
+            "Type": "Text"
+          },
+          {
+            "Name": "S99",
+            "Type": "Text"
+          },
+          {
+            "Name": "S184",
+            "Type": "Text"
+          }
+        ]
+      },
+      {
+        "Name": "S315",
+        "Measures": [
+          {
+            "Name": "S353",
+            "Type": "Double"
+          },
+          {
+            "Name": "S354",
+            "Type": "Double",
+            "FormatString": "S193"
+          },
+          {
+            "Name": "S355",
+            "Type": "Double",
+            "FormatString": "S193"
+          }
+        ],
+        "Columns": [
+          {
+            "Name": "S356",
+            "Type": "Text"
+          },
+          {
+            "Name": "S315",
+            "Type": "Text"
+          }
+        ]
+      },
+      {
+        "Name": "S357",
+        "Columns": [
+          {
+            "Name": "S358",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S359",
+            "Type": "Text"
+          },
+          {
+            "Name": "S315",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S360",
+            "Type": "Text"
+          }
+        ]
+      },
+      {
+        "Name": "S361",
+        "Measures": [
+          {
+            "Name": "S362",
+            "Type": "Integer",
+            "FormatString": "S114"
+          },
+          {
+            "Name": "S363",
+            "Type": "Double"
+          },
+          {
+            "Name": "S364",
+            "Type": "Text"
+          }
+        ],
+        "Columns": [
+          {
+            "Name": "S314",
+            "Type": "Text"
+          },
+          {
+            "Name": "S359",
+            "Type": "Text"
+          },
+          {
+            "Name": "S98",
+            "Type": "Text"
+          },
+          {
+            "Name": "S315",
+            "Type": "Integer",
+            "FormatString": "S6"
+          },
+          {
+            "Name": "S298",
+            "Type": "Text"
+          },
+          {
+            "Name": "S177",
+            "Type": "Text"
+          }
+        ]
+      },
+      {
+        "Name": "S365",
+        "Columns": [
+          {
+            "Name": "S133",
+            "Type": "Text"
+          },
+          {
+            "Name": "S174",
+            "Type": "Text"
+          },
+          {
+            "Name": "S159",
+            "Type": "Text"
+          },
+          {
+            "Name": "S175",
+            "Type": "Text"
+          }
+        ]
+      },
+      {
+        "Name": "S366",
+        "Columns": [
+          {
+            "Name": "S133",
+            "Type": "Text"
+          },
+          {
+            "Name": "S174",
+            "Type": "Text"
+          },
+          {
+            "Name": "S159",
+            "Type": "Double"
+          },
+          {
+            "Name": "S175",
+            "Type": "Text"
+          }
+        ]
+      }
+    ],
+    "ActiveRelationships": [
+      {
+        "PK": "S367",
+        "FK": "S368",
+        "UnidirectionalFilter": "S369"
+      },
+      {
+        "PK": "S370",
+        "FK": "S371",
+        "UnidirectionalFilter": "S372"
+      },
+      {
+        "PK": "S373",
+        "FK": "S374",
+        "UnidirectionalFilter": "S375"
+      },
+      {
+        "PK": "S376",
+        "FK": "S374",
+        "UnidirectionalFilter": "S377"
+      },
+      {
+        "PK": "S378",
+        "FK": "S379",
+        "BidirectionalFilter": "S380"
+      },
+      {
+        "PK": "S381",
+        "FK": "S382",
+        "BidirectionalFilter": "S383"
+      },
+      {
+        "PK": "S384",
+        "FK": "S385",
+        "BidirectionalFilter": "S386"
+      },
+      {
+        "PK": "S387",
+        "FK": "S388",
+        "UnidirectionalFilter": "S389"
+      },
+      {
+        "PK": "S390",
+        "FK": "S391",
+        "UnidirectionalFilter": "S392"
+      },
+      {
+        "PK": "S387",
+        "FK": "S393",
+        "UnidirectionalFilter": "S394"
+      },
+      {
+        "PK": "S381",
+        "FK": "S395",
+        "BidirectionalFilter": "S396"
+      },
+      {
+        "PK": "S395",
+        "FK": "S381",
+        "BidirectionalFilter": "S397"
+      },
+      {
+        "PK": "S381",
+        "FK": "S398",
+        "UnidirectionalFilter": "S399"
+      },
+      {
+        "PK": "S381",
+        "FK": "S400",
+        "UnidirectionalFilter": "S401"
+      },
+      {
+        "PK": "S381",
+        "FK": "S402",
+        "BidirectionalFilter": "S403"
+      },
+      {
+        "PK": "S404",
+        "FK": "S405",
+        "UnidirectionalFilter": "S406"
+      },
+      {
+        "PK": "S384",
+        "FK": "S407",
+        "BidirectionalFilter": "S408"
+      },
+      {
+        "PK": "S409",
+        "FK": "S410",
+        "UnidirectionalFilter": "S411"
+      }
+    ],
+    "InactiveRelationships": [
+      {
+        "PK": "S407",
+        "FK": "S385",
+        "UnidirectionalFilter": "S412"
+      }
+    ]
+  },
+  "semanticModel": {
+    "ArtifactId": "S413",
+    "Name": "S414",
+    "Description": "S415",
+    "Url": "S416",
+    "IconUrl": "S417"
+  }
+}

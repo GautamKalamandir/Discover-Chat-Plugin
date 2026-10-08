@@ -5,6 +5,7 @@ Limits: one query/table per call, 100k rows / 1M values / 15 MB, 120 queries/min
 """
 
 import logging
+import re
 from typing import Any
 
 import httpx
@@ -108,7 +109,8 @@ def _error_message(body: Any) -> str | None:
         for detail in details:
             value = detail.get("detail", {}).get("value") if isinstance(detail, dict) else None
             if value:
-                return str(value)
+                # Power BI marks names as <oii>…</oii> (spike S4); the repair loop wants plain text.
+                return re.sub(r"</?oii>", "", str(value))
     message = error.get("message") or error.get("code")
     return str(message) if message else None
 

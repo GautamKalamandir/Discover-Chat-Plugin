@@ -16,7 +16,10 @@ logger = logging.getLogger(__name__)
 
 
 def _matches(payload: Any) -> list[tuple[str, str]]:
-    """(column, value) pairs from a ValueSearch payload, whatever its exact nesting."""
+    """(column, value) pairs from a ValueSearch payload, whatever its exact nesting.
+
+    Spike S3 shape: {"Results": {"<term>": [{"Table", "Column", "Value", "Score"}]}}, where
+    Column is the bare column name; it's qualified with its Table here."""
     found: list[tuple[str, str]] = []
 
     def walk(node: Any) -> None:
@@ -26,6 +29,9 @@ def _matches(payload: Any) -> list[tuple[str, str]]:
         elif isinstance(node, dict):
             lowered = {str(k).lower(): v for k, v in node.items()}
             column, value = lowered.get("column"), lowered.get("value")
+            table = lowered.get("table")
+            if isinstance(column, str) and isinstance(table, str) and parse_ref(column) is None:
+                column = f"'{table}'[{column}]"
             if isinstance(column, str) and isinstance(value, str | int | float):
                 found.append((column, str(value)))
             for child in node.values():
