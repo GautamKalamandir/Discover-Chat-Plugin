@@ -70,11 +70,14 @@ def test_unknown_local_model_is_a_configuration_error() -> None:
 
 @pytest.mark.parametrize("gateway", list(PowerBIGatewayName))
 def test_powerbi_factory_builds_every_configured_gateway(gateway: PowerBIGatewayName) -> None:
-    assert create_powerbi_gateway(Settings(powerbi_gateway=gateway)).name == gateway.value
+    assert (
+        create_powerbi_gateway(Settings(_env_file=None, powerbi_gateway=gateway)).name
+        == gateway.value
+    )
 
 
 def test_fallback_equal_to_primary_is_ignored() -> None:
-    settings = Settings(powerbi_gateway="rest", powerbi_fallback_gateway="rest")
+    settings = Settings(_env_file=None, powerbi_gateway="rest", powerbi_fallback_gateway="rest")
 
     primary, fallback = create_gateways(settings)
 
