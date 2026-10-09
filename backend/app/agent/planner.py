@@ -79,6 +79,25 @@ class Planner:
             QueryPlan,
         )
 
+    async def replan_with_values(
+        self, messages: list[ChatMessage], previous: QueryPlan, hints: list[str]
+    ) -> QueryPlan:
+        """One more try after words the plan couldn't place were found as values in the data."""
+        feedback = (
+            "Some words you could not place were found as values in the data (word: column = "
+            "stored value, match score). The user may have misspelt them. Use a match as a filter "
+            "when it fits the question, with the stored value exactly as given. Words that still "
+            'don\'t fit stay in "unresolved_terms".\n' + untrusted("\n".join(hints)[:3000])
+        )
+        return await self._llm.complete_json(
+            [
+                *messages,
+                ChatMessage("assistant", previous.model_dump_json()),
+                ChatMessage("user", feedback),
+            ],
+            QueryPlan,
+        )
+
     async def repair_dax(self, dax: str, error: str, context: str) -> str:
         messages = [
             ChatMessage("system", load_prompt("repair").replace("{{", "{").replace("}}", "}")),

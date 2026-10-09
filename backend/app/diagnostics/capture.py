@@ -38,12 +38,24 @@ def mask_text_payload(text: str | None) -> Any:
     if text is None:
         return None
     try:
-        return mask(json.loads(text))
+        parsed = json.loads(text)
     except ValueError:
-        lines = text.splitlines()
-        if len(lines) > 1 and "," in lines[0]:
-            return {"csv_header": lines[0], "csv_rows": len(lines) - 1}
-        return f"<text:{len(text)}>"
+        parsed = None
+    if parsed is not None:
+        masked = mask(parsed)
+        # Column names are model metadata (kept, like the schema); row values stay masked.
+        result = parsed.get("executionResult") if isinstance(parsed, dict) else None
+        if isinstance(result, dict) and isinstance(result.get("tables"), list):
+            for original, hidden in zip(
+                result["tables"], masked["executionResult"]["tables"], strict=False
+            ):
+                if isinstance(original, dict) and "columns" in original:
+                    hidden["columns"] = original["columns"]
+        return masked
+    lines = text.splitlines()
+    if len(lines) > 1 and "," in lines[0]:
+        return {"csv_header": lines[0], "csv_rows": len(lines) - 1}
+    return f"<text:{len(text)}>"
 
 
 class CaptureBundle:

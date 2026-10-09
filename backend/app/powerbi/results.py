@@ -25,6 +25,19 @@ def rows_from_json(payload: Any) -> Rows | None:
     # MCP servers wrap plain-string tool results as {"result": "<json text>"}.
     if set(payload) == {"result"} and isinstance(payload["result"], str):
         return rows_from_json(parse_json_text(payload["result"]))
+    # Fabric IQ ExecuteQuery (spike S3, 2026-10-08):
+    # {"executionResult": {"tables": [{"columns": [{"name", "type"}], "rows": [[v1, v2, ...]]}]}}
+    if isinstance(payload.get("executionResult"), dict):
+        return rows_from_json(payload["executionResult"])
+    columns, rows = payload.get("columns"), payload.get("rows")
+    if (
+        isinstance(columns, list)
+        and isinstance(rows, list)
+        and all(isinstance(c, dict) and isinstance(c.get("name"), str) for c in columns)
+        and all(isinstance(r, list) for r in rows)
+    ):
+        names = [c["name"] for c in columns]
+        return [dict(zip(names, row, strict=False)) for row in rows]
     if isinstance(payload.get("rows"), list):
         return rows_from_json(payload["rows"])
     for key in ("results", "tables"):

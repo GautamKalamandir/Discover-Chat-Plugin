@@ -150,7 +150,7 @@ def create_app(
         CORSMiddleware,
         allow_origins=settings.cors_allowed_origins,
         allow_credentials=False,
-        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_methods=["GET", "POST", "DELETE", "OPTIONS"],  # DELETE: "Delete chat"
         allow_headers=["Authorization", "Content-Type", CORRELATION_HEADER],
         expose_headers=[CORRELATION_HEADER],
         max_age=600,

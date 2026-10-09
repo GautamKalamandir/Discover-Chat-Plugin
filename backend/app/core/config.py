@@ -38,6 +38,8 @@ DEFAULT_AGENT_MAX_REPAIRS = 2
 DEFAULT_AGENT_RESULT_ROWS_TO_LLM = 50
 DEFAULT_AGENT_TABLE_ROWS = 200
 DEFAULT_AGENT_CONTEXT_DOCS = 12
+# Models with more visible columns than this get a table-selection step before planning.
+DEFAULT_AGENT_TABLE_SELECTION_MIN_COLUMNS = 80
 DEFAULT_FISCAL_YEAR_START_MONTH = 4  # Q13c: April-March
 DEFAULT_CHAT_TURN_TIMEOUT_SECONDS = 120
 DEFAULT_CHAT_QUESTIONS_PER_MINUTE = 20
@@ -260,7 +262,18 @@ class Settings(BaseSettings):
     agent_result_rows_to_llm: int = DEFAULT_AGENT_RESULT_ROWS_TO_LLM
     agent_table_rows: int = DEFAULT_AGENT_TABLE_ROWS
     agent_context_docs: int = DEFAULT_AGENT_CONTEXT_DOCS
+    agent_table_selection_min_columns: int = DEFAULT_AGENT_TABLE_SELECTION_MIN_COLUMNS
     fiscal_year_start_month: int = DEFAULT_FISCAL_YEAR_START_MONTH
+
+    @field_validator("agent_table_selection_min_columns", mode="before")
+    @classmethod
+    def _column_threshold_or_default(cls, value: object) -> int:
+        # 0 = always select tables first; missing/invalid falls back to the default.
+        try:
+            number = int(str(value).strip())
+        except (TypeError, ValueError):
+            return DEFAULT_AGENT_TABLE_SELECTION_MIN_COLUMNS
+        return number if 0 <= number <= 100_000 else DEFAULT_AGENT_TABLE_SELECTION_MIN_COLUMNS
 
     # --- Phase 2 spikes: live diagnostics (never in production; docs/spikes-runbook.md) ---
     diagnostics_enabled: bool = False

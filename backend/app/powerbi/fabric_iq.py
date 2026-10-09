@@ -14,6 +14,7 @@ the *user* is unauthorized raises PowerBIAccessDeniedError.
 """
 
 import logging
+import re
 import time
 from collections.abc import AsyncIterator, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
@@ -94,7 +95,9 @@ class FabricIqMcpGateway(PowerBIGateway):
         )
         if (dax_error := _dax_error_text(result)) is not None:
             raise DaxQueryError(dax_error)
-        rows = require_rows(_rows_from_result(result), "Fabric IQ ExecuteQuery")
+        rows = _canonical_columns(
+            require_rows(_rows_from_result(result), "Fabric IQ ExecuteQuery"), dax
+        )
         return QueryResult(
             columns=columns_of(rows),
             rows=rows[:max_rows],
@@ -228,6 +231,34 @@ def _csv_resource(result: CallToolResult) -> str | None:
             if "csv" in (content.resource.mime_type or "").lower():
                 return content.resource.text
     return None
+
+
+_QUALIFIED = re.compile(r"^'?(?P<table>[^'\[\]]+?)'?\[(?P<name>[^\]]+)\]$")
+_DOTTED = re.compile(r"^(?P<table>[^.\[\]]+)\.(?P<name>[^\[\]]+)$")
+_DAX_ALIAS = re.compile(r'"((?:[^"]|"")+)"\s*,')
+
+
+def _canonical_columns(rows: list[dict[str, Any]], dax: str) -> list[dict[str, Any]]:
+    """Column names as the REST API spells them, which the rest of the agent relies on:
+    group-by columns `Table[Column]`, calculated values `[Alias]`. Fabric IQ's own spelling is
+    mapped onto that (aliases are recognised from the query that was sent)."""
+    aliases = {m.group(1).replace('""', '"') for m in _DAX_ALIAS.finditer(dax)}
+
+    def canonical(name: str) -> str:
+        if name.startswith("[") and name.endswith("]"):
+            return name
+        if name in aliases:
+            return f"[{name}]"
+        if match := _QUALIFIED.match(name):
+            return f"{match.group('table')}[{match.group('name')}]"
+        if match := _DOTTED.match(name):
+            return f"{match.group('table')}[{match.group('name')}]"
+        return name
+
+    mapping = {name: canonical(name) for row in rows[:1] for name in row}
+    if all(k == v for k, v in mapping.items()):
+        return rows
+    return [{mapping.get(k, k): v for k, v in row.items()} for row in rows]
 
 
 def _dax_error_text(result: CallToolResult) -> str | None:

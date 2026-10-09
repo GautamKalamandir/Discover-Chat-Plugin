@@ -275,10 +275,25 @@ async def test_clarification_is_asked_and_nothing_runs(env: Env) -> None:
     ],
 )
 @pytest.mark.scenario(6)
-async def test_scenario_6_partial_coverage_gets_generic_message(env: Env, planned: str) -> None:
+async def test_scenario_6_partial_coverage_gets_no_partial_answer(env: Env, planned: str) -> None:
     events = await env.run(
         env.agent(ScriptedLLM([planned])), "user-a", "Compare sales with finance"
     )
+
+    # Names only the user's own word (decision 2026-10-08); identical whether or not a restricted
+    # model has finance data, so nothing is revealed. Never a partial answer.
+    assert text_of(events) == (
+        'I couldn\'t find "finance" in the data available to you. '
+        "Check the spelling or try another word."
+    )
+    assert await env.count("query_executions") == 0
+
+
+@pytest.mark.scenario(6)
+async def test_scenario_6_words_not_in_the_question_are_never_echoed(env: Env) -> None:
+    planned = plan(status="cannot_answer", unresolved_terms=["Budget Variance"])  # LLM's words
+
+    events = await env.run(env.agent(ScriptedLLM([planned])), "user-a", "Compare sales with it")
 
     assert text_of(events) == GENERIC_DENIAL
     assert await env.count("query_executions") == 0

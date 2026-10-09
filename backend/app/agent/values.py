@@ -42,6 +42,34 @@ def _matches(payload: Any) -> list[tuple[str, str]]:
     return found
 
 
+HINTS_PER_TERM = 3
+
+
+def value_hints(payload: Any) -> list[str]:
+    """Readable "word -> column = stored value" lines from a ValueSearch payload, best matches
+    first, so the planner can place words it didn't recognise (typos like "surar" -> SURAT)."""
+    results = payload.get("Results") if isinstance(payload, dict) else None
+    if not isinstance(results, dict):
+        return []
+    hints: list[str] = []
+    for term, matches in results.items():
+        if not isinstance(matches, list):
+            continue
+        scored = []
+        for match in matches:
+            if not isinstance(match, dict):
+                continue
+            table, column, value = match.get("Table"), match.get("Column"), match.get("Value")
+            score = match.get("Score")
+            if isinstance(table, str) and isinstance(column, str) and value is not None:
+                number = score if isinstance(score, int | float) else 0.0
+                scored.append((number, f"'{table}'[{column}]", str(value)))
+        scored.sort(key=lambda s: -s[0])
+        for score, column_ref, value in scored[:HINTS_PER_TERM]:
+            hints.append(f'"{term}": {column_ref} = "{value}" (match score {score:.2f})')
+    return hints
+
+
 def _same_column(a: str, b: str) -> bool:
     pa, pb = parse_ref(a), parse_ref(b)
     if pa is None or pb is None:

@@ -64,14 +64,45 @@ class PlanStep(BaseModel):
     )
 
 
+class ChangeAnalysis(BaseModel):
+    """'Why did X change between two periods?' The server builds the queries and works out where
+    the change came from; the LLM only chooses what to compare and which breakdowns to use."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    model_id: str
+    label: str = Field(max_length=120, description="What is analysed, e.g. 'GOLD net sales'")
+    measure: str | None = Field(
+        default=None,
+        description="A general measure (not one fixed to a year), e.g. Sales[Total Net Sales]",
+    )
+    aggregation: Aggregation | None = Field(default=None, description="Only if no measure fits")
+    filters: list[Filter] = Field(default_factory=list, max_length=10)
+    baseline: TimeRange = Field(description="The earlier / reference period")
+    current: TimeRange = Field(description="The period being explained")
+    drivers: list[str] = Field(
+        default_factory=list,
+        max_length=3,
+        description="Up to 3 columns to break the change down by (e.g. store, category, month)",
+    )
+    basis: Literal["like_for_like", "full_period"] | None = Field(
+        default=None,
+        description="Only when the user said how to compare a period that is still running",
+    )
+
+
 class QueryPlan(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    status: Literal["ready", "clarify", "cannot_answer"]
+    status: Literal["ready", "clarify", "cannot_answer", "help"]
+    help_topic: Literal["greeting", "capabilities", "data_sources", "out_of_scope"] | None = None
     clarification: str | None = Field(default=None, max_length=300)
     unresolved_terms: list[str] = Field(default_factory=list, max_length=10)
     steps: list[PlanStep] = Field(default_factory=list, max_length=8)
     combine: Literal["none", "compare"] = "none"
+    change: ChangeAnalysis | None = Field(
+        default=None, description="For 'why did X change / what drove it' questions, not steps"
+    )
 
 
 class RepairedDax(BaseModel):

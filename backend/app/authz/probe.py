@@ -14,7 +14,9 @@ from app.core.config import AuthProviderName, Settings
 
 logger = logging.getLogger(__name__)
 
-_DENIED_STATUSES = {401, 403, 404}
+# 400: Power BI rejects the id itself (e.g. not a dataset GUID); it can never be accessible, so it's
+# a denial (cached) rather than "unknown" (re-asked on every request). Fail-closed either way.
+_DENIED_STATUSES = {400, 401, 403, 404}
 
 
 class ModelAccessProbe(ABC):

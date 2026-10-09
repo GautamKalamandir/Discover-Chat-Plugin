@@ -75,17 +75,54 @@ def format_number(value: float) -> str:
 
 
 def template_answer(facts: Facts) -> str:
+    notes = "".join(f"\nNote: {n}" for n in facts.notes)
+    if facts.change is not None:
+        return _template_change(facts.change) + notes
+    return _template_steps(facts) + notes
+
+
+def _template_steps(facts: Facts) -> str:
     parts: list[str] = []
     for step in facts.steps:
         parts.append(_template_step(step))
     for comparison in facts.comparisons:
         pct = comparison["percent_change"]
+        subject = comparison.get("measure") or comparison.get("group")
         parts.append(
-            f"Difference in {comparison['measure']} ({comparison['first']} vs "
+            f"Difference in {subject} ({comparison['first']} vs "
             f"{comparison['second']}): {format_number(comparison['difference'])}"
             + (f" ({pct:+.2f}%)." if pct is not None else ".")
         )
     return "\n".join(parts)
+
+
+def _template_change(change: dict[str, Any]) -> str:
+    scope = f" ({', '.join(change['filters'])})" if change["filters"] else ""
+    pct = change["percent_change"]
+    lines = [
+        f"{change['analysed']}{scope} went from {format_number(change['baseline_value'])} "
+        f"({change['baseline_period']}) to {format_number(change['current_value'])} "
+        f"({change['current_period']}), a change of {format_number(change['change'])}"
+        + (f" ({pct:+.2f}%)." if pct is not None else ".")
+    ]
+    for breakdown in change["breakdowns"]:
+        for key, title in (("biggest_decreases", "decreases"), ("biggest_increases", "increases")):
+            movers = breakdown[key]
+            if movers:
+                items = "; ".join(
+                    f"{m['item']} {format_number(m['change'])}"
+                    + (
+                        f" ({format_number(m['share_of_total_change'])}% of the change)"
+                        if m["share_of_total_change"] is not None
+                        else ""
+                    )
+                    for m in movers
+                )
+                lines.append(f"- By {breakdown['by']}, biggest {title}: {items}.")
+    lines.append(
+        "These show where the change happened in your data; the data can't show outside reasons."
+    )
+    return "\n".join(lines)
 
 
 def _template_step(step: StepFacts) -> str:
@@ -109,6 +146,18 @@ def _template_step(step: StepFacts) -> str:
     return "\n".join(lines)
 
 
+def _rounded(node: Any) -> Any:
+    """Floats to 2 decimals for the LLM (live: it echoed 2,699.952970939907). The grounding
+    check still compares against the exact values, at the precision the answer shows."""
+    if isinstance(node, float):
+        return round(node, 2)
+    if isinstance(node, dict):
+        return {k: _rounded(v) for k, v in node.items()}
+    if isinstance(node, list):
+        return [_rounded(v) for v in node]
+    return node
+
+
 class AnswerWriter:
     def __init__(self, llm: LLMProvider, *, rows_to_llm: int) -> None:
         self._llm = llm
@@ -130,9 +179,9 @@ class AnswerWriter:
                         "QUESTION",
                         untrusted(question),
                         "FACTS",
-                        untrusted(json.dumps(facts.as_dict(), default=str)),
+                        untrusted(json.dumps(_rounded(facts.as_dict()), default=str)),
                         "ROWS",
-                        untrusted(json.dumps(rows, default=str)[:20000]),
+                        untrusted(json.dumps(_rounded(rows), default=str)[:20000]),
                     ]
                 ),
             ),

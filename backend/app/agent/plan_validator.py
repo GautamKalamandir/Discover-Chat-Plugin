@@ -38,6 +38,8 @@ async def validate_plan(
     max_steps: int,
     session_id: uuid.UUID | None,
 ) -> ValidatedPlan:
+    if plan.change is not None:
+        return await _validate_change(plan, authz, authz_service, schemas, session_id=session_id)
     if not plan.steps:
         raise PlanInvalidError(["a ready plan needs at least one step"])
     if len(plan.steps) > max_steps:
@@ -60,6 +62,67 @@ async def validate_plan(
     if problems:
         raise PlanInvalidError(problems)
     return ValidatedPlan(plan.model_copy(update={"steps": steps}), authz)
+
+
+async def _validate_change(
+    plan: QueryPlan,
+    authz: AuthorizedContext,
+    authz_service: AuthorizationService,
+    schemas: dict[str, NormalizedSchema],
+    *,
+    session_id: uuid.UUID | None,
+) -> ValidatedPlan:
+    change = plan.change
+    if change is None:  # pragma: no cover - guarded by the caller
+        raise PlanInvalidError(["no change analysis"])
+    authz = await authz_service.assert_allowed(authz, [change.model_id], session_id=session_id)
+    schema = schemas.get(change.model_id)
+    if schema is None:
+        raise PlanInvalidError([f"model {change.model_id} was not in the provided context"])
+
+    problems: list[str] = []
+
+    def need_column(ref: str) -> None:
+        parsed = parse_ref(ref)
+        if parsed is None or object_key("column", *parsed) not in schema.visible_keys:
+            problems.append(f"unknown column {ref}")
+
+    measure = None
+    if change.measure:
+        measure = _resolve_measure(change.measure, schema)
+        if measure is None:
+            problems.append(f"unknown measure {change.measure}")
+    elif change.aggregation:
+        need_column(change.aggregation.column)
+    else:
+        problems.append("the change analysis needs a measure or an aggregation")
+    for flt in change.filters:
+        need_column(flt.column)
+    need_column(change.baseline.column)
+    need_column(change.current.column)
+    for driver in change.drivers:
+        need_column(driver)
+    if problems:
+        raise PlanInvalidError(problems)
+    # A raw date column gives one row per day: noise, not an explanation. Months come from a
+    # month column; date-typed breakdowns are dropped (live test 2026-10-08).
+    drivers = [d for d in change.drivers if not _is_date_column(d, schema)]
+    fixed = change.model_copy(update={"measure": measure, "drivers": drivers})
+    return ValidatedPlan(plan.model_copy(update={"change": fixed, "steps": []}), authz)
+
+
+def _is_date_column(ref: str, schema: NormalizedSchema) -> bool:
+    parsed = parse_ref(ref)
+    if parsed is None:
+        return False
+    table, name = parsed
+    return any(
+        o.kind == "column"
+        and o.table == table
+        and o.name == name
+        and (o.data_type or "").lower() in {"datetime", "date"}
+        for o in schema.objects
+    )
 
 
 def _check_step(step: PlanStep, schema: NormalizedSchema) -> tuple[PlanStep, list[str]]:

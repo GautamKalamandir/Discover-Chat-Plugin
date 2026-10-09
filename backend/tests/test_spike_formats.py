@@ -8,11 +8,13 @@ from typing import Any
 import pytest
 from mcp.types import CallToolResult, TextContent
 
-from app.agent.values import _matches
+from app.agent.values import _matches, value_hints
 from app.core.config import Settings
+from app.diagnostics.capture import mask_text_payload
 from app.powerbi.errors import DaxQueryError
 from app.powerbi.fabric_iq import (
     FabricIqMcpGateway,
+    _canonical_columns,
     _dax_error_text,
     _payload_from_result,
     _rows_from_result,
@@ -137,3 +139,78 @@ def test_rest_error_detail_drops_power_bi_name_markers(value: str, expected: str
     }
 
     assert _error_message(body) == expected
+
+
+# --- ExecuteQuery success (spike S3, second capture) ------------------------------------------
+
+
+def test_successful_execute_query_rows_are_positional() -> None:
+    text = json.dumps(
+        {
+            "executionResult": {
+                "tables": [
+                    {
+                        "columns": [{"name": "Product.LOB", "type": "Text"},
+                                    {"name": "Total Net Sales", "type": "Double"}],
+                        "rows": [["GOLD", 12.5], ["SILVER", 3.25]],
+                    }
+                ]
+            },
+            "semanticModel": {"Name": "Sales"},
+        }
+    )  # fmt: skip
+
+    rows = _rows_from_result(_result(text, CITATION))
+
+    assert rows == [
+        {"Product.LOB": "GOLD", "Total Net Sales": 12.5},
+        {"Product.LOB": "SILVER", "Total Net Sales": 3.25},
+    ]
+
+
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        ("Product.LOB", "Product[LOB]"),  # dotted
+        ("'NET SALES MASTER'[Location Name]", "NET SALES MASTER[Location Name]"),
+        ("Product[LOB]", "Product[LOB]"),
+        ("[Total Net Sales]", "[Total Net Sales]"),
+        ("Total Net Sales", "[Total Net Sales]"),  # an alias of the query that was sent
+    ],
+)
+def test_fabric_column_names_are_mapped_to_the_rest_spelling(name: str, expected: str) -> None:
+    dax = "EVALUATE SUMMARIZECOLUMNS('Product'[LOB], \"Total Net Sales\", [Total Net Sales])"
+
+    rows = _canonical_columns([{name: 1}], dax)
+
+    assert list(rows[0]) == [expected]
+
+
+def test_capture_keeps_result_column_names_but_masks_values() -> None:
+    text = json.dumps(
+        {"executionResult": {"tables": [{"columns": [{"name": "Product.LOB", "type": "Text"}],
+                                         "rows": [["GOLD"]]}]}}
+    )  # fmt: skip
+
+    masked = mask_text_payload(text)
+
+    table = masked["executionResult"]["tables"][0]
+    assert table["columns"] == [{"name": "Product.LOB", "type": "Text"}]
+    assert table["rows"] == [["<text:4>"]]
+
+
+def test_value_hints_rank_matches_per_word() -> None:
+    payload = {
+        "Results": {
+            "surar": [
+                {"Table": "Dim Key", "Column": "Location", "Value": "SURAT", "Score": 0.71},
+                {"Table": "NET SALES MASTER", "Column": "Location Name", "Value": "SURAT",
+                 "Score": 0.86},
+            ]
+        }
+    }  # fmt: skip
+
+    assert value_hints(payload) == [
+        '"surar": \'NET SALES MASTER\'[Location Name] = "SURAT" (match score 0.86)',
+        '"surar": \'Dim Key\'[Location] = "SURAT" (match score 0.71)',
+    ]

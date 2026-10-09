@@ -25,6 +25,7 @@ def rest_probe(handler: httpx.MockTransport, concurrency: int = 8) -> PowerBiRes
     ("status", "outcome"),
     [
         (200, ProbeOutcome.ALLOWED),
+        (400, ProbeOutcome.DENIED),  # id rejected by Power BI (live: non-GUID registry ids)
         (401, ProbeOutcome.DENIED),
         (403, ProbeOutcome.DENIED),
         (404, ProbeOutcome.DENIED),

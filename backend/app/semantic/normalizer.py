@@ -8,6 +8,7 @@ spike S3; unknown shapes yield an empty schema rather than guesses.
 
 import hashlib
 import json
+import re
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
@@ -35,12 +36,31 @@ class VerifiedAnswer:
 
 
 @dataclass(frozen=True)
+class Relationship:
+    """`from_table` filters `to_table` (Fabric IQ: PK side filters the FK side)."""
+
+    from_table: str
+    from_column: str
+    to_table: str
+    to_column: str
+    active: bool = True
+
+    def describe(self) -> str:
+        state = "" if self.active else " (inactive)"
+        return (
+            f"{self.from_table}[{self.from_column}] filters "
+            f"{self.to_table}[{self.to_column}]{state}"
+        )
+
+
+@dataclass(frozen=True)
 class NormalizedSchema:
     objects: tuple[SchemaObject, ...]
     ai_instructions: tuple[str, ...] = ()
     verified_answers: tuple[VerifiedAnswer, ...] = ()
     schema_hash: str = ""
     visible_keys: frozenset[str] = field(default_factory=frozenset)
+    relationships: tuple[Relationship, ...] = ()
 
 
 def object_key(kind: str, table: str, name: str) -> str:
@@ -84,13 +104,42 @@ def normalize(payload: Any) -> NormalizedSchema:
         },
         sort_keys=True,
     )
+    tables = {o.table for o in objects if o.kind == "table"}
     return NormalizedSchema(
         objects=tuple(objects),
         ai_instructions=instructions,
         verified_answers=answers,
         schema_hash=hashlib.sha256(canonical.encode()).hexdigest(),
         visible_keys=frozenset(o.key for o in objects),
+        relationships=tuple(
+            r for r in _relationships(root) if {r.from_table, r.to_table} <= tables
+        ),
     )
+
+
+_REF = re.compile(r"^\s*'?(?P<table>[^'\[\]]+?)'?\s*\[(?P<name>[^\]]+)\]\s*$")
+
+
+def _relationships(root: dict[str, Any]) -> list[Relationship]:
+    """Spike S3 shape: ActiveRelationships / InactiveRelationships: [{"PK", "FK", ...}] with
+    "'Table'[Column]" references; the PK side filters the FK side."""
+    found: list[Relationship] = []
+    for key, active in (("ActiveRelationships", True), ("InactiveRelationships", False)):
+        for raw in _list(root, key):
+            if not isinstance(raw, dict):
+                continue
+            pk, fk = _REF.match(_str(raw, "PK") or ""), _REF.match(_str(raw, "FK") or "")
+            if pk and fk:
+                found.append(
+                    Relationship(
+                        pk.group("table").strip(),
+                        pk.group("name").strip(),
+                        fk.group("table").strip(),
+                        fk.group("name").strip(),
+                        active,
+                    )
+                )
+    return found
 
 
 # --- helpers ------------------------------------------------------------------------------------

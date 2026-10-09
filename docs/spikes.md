@@ -64,8 +64,17 @@ schema structure is committed: `backend/tests/fixtures/schemas/captured-fabric-i
    - **Change:** qualify the column as `'Table'[Column]` (`app/agent/values.py`).
 10. **The tool list includes more than documented:** `ResolveFabricItem`, `DiscoverArtifacts` and
     `GetReportMetadata`. They're not used yet.
-11. **The successful ExecuteQuery result format is still open.** In the first run the sample query failed (consequence
-    of finding 7). It will be captured in the next run.
+11. **Successful ExecuteQuery** (bundle `20261008T074831800740Z`) returns
+    `{"executionResult": {"tables": [{"columns": [{"name", "type"}], "rows": [[v1, v2, …]]}]}, "semanticModel": {…}}`.
+    The rows are **positional lists**, not objects. Our parser didn't recognise this, so every live question fell back
+    to REST (about 8 s slower).
+    - **Change:** parse the positional rows.
+    - **Change:** map Fabric's column names onto the REST spelling (`Table[Column]`, `[Alias]`), using the query's
+      own aliases.
+    - **Change:** the capture now keeps result column names (metadata) to confirm the exact spelling. Row values stay
+      masked.
+13. **The access probe now treats HTTP 400 as denied.** Power BI rejects ids that aren't dataset GUIDs. Before, the 5
+    sample registry entries were re-probed on every request.
 
 ### REST (S4)
 
@@ -74,7 +83,7 @@ schema structure is committed: `backend/tests/fixtures/schemas/captured-fabric-i
 
 ## Open
 
-- Successful `ExecuteQuery` format (next diagnostics run).
+- Exact Fabric result column spelling (the next diagnostics run keeps the names).
 - S1 in Power BI Desktop. S5 with Context fields and slicers.
 - Non-Build and RLS users (S3/S4 access rules).
 - **Large models:** `GetSemanticModelSchema` says it returns "an overview if the model is large" and supports JMESPath

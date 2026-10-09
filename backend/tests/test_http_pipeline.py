@@ -74,6 +74,21 @@ async def test_cors_preflight_from_sandboxed_visual_is_allowed(client: AsyncClie
     assert "access-control-allow-credentials" not in response.headers
 
 
+async def test_cors_preflight_allows_the_visuals_delete_chat(client: AsyncClient) -> None:
+    # "Delete chat" sends DELETE cross-origin; a refused preflight failed silently in the visual.
+    response = await client.options(
+        "/api/v1/chat/sessions/00000000-0000-0000-0000-000000000000",
+        headers={
+            "Origin": "null",
+            "Access-Control-Request-Method": "DELETE",
+            "Access-Control-Request-Headers": "authorization",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "DELETE" in response.headers["access-control-allow-methods"]
+
+
 async def test_cors_preflight_from_unknown_origin_is_not_allowed(client: AsyncClient) -> None:
     response = await client.options(
         "/api/v1/session",
