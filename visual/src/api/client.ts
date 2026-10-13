@@ -2,6 +2,7 @@ import { TokenProvider } from "../auth/tokenProvider";
 import { readSse } from "./sse";
 import {
     ApiError,
+    Choice,
     DiagnosticsSummary,
     ModelOption,
     ReportFilter,
@@ -15,6 +16,8 @@ export interface AskRequest {
     sessionId?: string | null;
     primaryModelId?: string | null;
     reportFilters?: ReportFilter[];
+    /** Answers the open clarification by clicking one of its options. */
+    choice?: Choice | null;
 }
 
 /** The visual's only way to the backend. Adds the bearer token; one silent retry with a fresh token
@@ -83,6 +86,12 @@ export class ApiClient {
                 session_id: request.sessionId ?? null,
                 primary_model_id: request.primaryModelId ?? null,
                 report_filters: request.reportFilters ?? [],
+                choice: request.choice
+                    ? {
+                          clarification_id: request.choice.clarificationId,
+                          option_id: request.choice.optionId,
+                      }
+                    : null,
             },
             signal,
         );

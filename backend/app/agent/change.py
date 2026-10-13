@@ -70,6 +70,23 @@ def resolve_periods(
     )
 
 
+def basis_options(
+    change: ChangeAnalysis, today: date, fiscal_start_month: int
+) -> list[tuple[str, ChangeAnalysis]]:
+    """The two ways to compare a running period, as options the user can click (ADR 0014)."""
+    options: list[tuple[str, ChangeAnalysis]] = []
+    for basis, template in (
+        ("like_for_like", "Same dates: {b} vs {c}"),
+        ("full_period", "{b} vs {c} so far"),
+    ):
+        chosen = change.model_copy(update={"basis": basis})
+        periods = resolve_periods(chosen, today, fiscal_start_month)
+        if isinstance(periods, ChangePeriods):
+            label = template.format(b=periods.baseline_label, c=periods.current_label)
+            options.append((label[:80], chosen))
+    return options
+
+
 def _trim(period: Range, elapsed_days: int) -> Range:
     start, end = period
     return start, min(end, start + timedelta(days=elapsed_days))

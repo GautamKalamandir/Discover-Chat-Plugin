@@ -32,14 +32,19 @@ Every path returns the same `404 session_not_found` for missing, expired or some
   "session_id": "uuid | null",
   "question": "What are GOLD sales this FY?",
   "primary_model_id": "sales-ds",
-  "report_filters": [{"column": "Product[LOB]", "values": ["GOLD"]}]
+  "report_filters": [{"column": "Product[LOB]", "values": ["GOLD"]}],
+  "choice": {"clarification_id": "uuid", "option_id": "uuid"}
 }
 ```
 
 Validation, done by pydantic before any work:
 - `question` 1–`AGENT_MAX_QUESTION_CHARS`;
 - at most 20 report filters, each at most 50 values;
-- `primary_model_id` optional.
+- `primary_model_id` optional;
+- `choice` optional (ADR 0014): a click on an option of the latest clarification in this conversation. `question`
+  is then the option's label (stored as the user's message). The option's plan, validated when it was offered, runs
+  again through G2 and the user's schema, with no planning call. Any other choice gets "That option is no longer
+  available…".
 
 `primary_model_id` is a hint: it goes through `assert_allowed` (G2), and a model the user can't access returns the
 same generic 404 as `/models/{id}`. A new value replaces the session's stored primary model (the Format-pane setting
@@ -57,7 +62,7 @@ event: session        data: {"session_id": "...", "correlation_id": "..."}      
 event: status         data: {"stage": "understanding|finding_data|planning|querying|analyzing|answering"}
 event: table          data: {"model_id", "title", "columns", "rows", "truncated"}
 event: token          data: {"text": "..."}
-event: clarification  data: {"question": "..."}
+event: clarification  data: {"question": "...", "id": "uuid|null", "options": [{"id", "label"}], "allow_free_text": true}
 event: error          data: {"code": "...", "message": "<user-safe>"}
 event: done           data: {"message_id": "...", "query_ids": [...]}             (always last)
 : ping                                                                            (every CHAT_HEARTBEAT_SECONDS)
@@ -88,7 +93,8 @@ revisited in Phase 13 if several instances run.
 ## 5. History endpoint (`GET /chat/sessions/{id}`)
 
 It returns the last `AGENT_HISTORY_TURNS * 2` messages: `{id, role, content, created_at, kind}`, where `kind` is
-`answer | clarification | error`.
+`answer | clarification | error`. Clarifications also carry `clarification_id`, `options` (`{id, label}`, never the
+stored plans) and `open`, which is true only for the latest message, the one a click can still answer (ADR 0014).
 
 **Result tables are not returned.** Raw rows are never stored (Q9c), so a restored conversation shows the text
 answers only. Re-asking reproduces a table.

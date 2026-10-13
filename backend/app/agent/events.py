@@ -29,7 +29,13 @@ class TableEvent:
 
 @dataclass(frozen=True)
 class ClarificationEvent:
+    """One question for the user. `options` ({id, label}) are answers the user can click; their
+    ids are server-generated and only valid for this clarification (ADR 0014)."""
+
     question: str
+    id: uuid.UUID | None = None
+    options: list[dict[str, str]] = field(default_factory=list)
+    allow_free_text: bool = True
     type: str = "clarification"
 
 

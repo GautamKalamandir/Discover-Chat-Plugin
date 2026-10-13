@@ -40,6 +40,64 @@ function run(events: StreamEvent[]) {
     return state;
 }
 
+describe("chatReducer: clarification options (ADR 0014)", () => {
+    const asked = (): ReturnType<typeof run> =>
+        run([
+            {
+                type: "clarification",
+                question: "Which store did you mean?",
+                id: "c1",
+                options: [
+                    { id: "o1", label: "STR - KOSAMBA" },
+                    { id: "o2", label: "STR - KIM" },
+                ],
+            },
+            { type: "done", message_id: "m1", query_ids: [] },
+        ]);
+
+    it("keeps the options open on the clarification", () => {
+        const message = asked().messages[1];
+
+        expect(message).toMatchObject({ kind: "clarification", clarificationId: "c1", open: true });
+        expect(message.options?.map((o) => o.label)).toEqual(["STR - KOSAMBA", "STR - KIM"]);
+    });
+
+    it("closes them as soon as the user asks anything", () => {
+        const next = chatReducer(asked(), { type: "asked", id: "2", question: "STR - KOSAMBA" });
+
+        expect(next.messages[1].open).toBe(false);
+    });
+
+    it("restores only the latest open clarification as clickable", () => {
+        const state = chatReducer(initialState, {
+            type: "restored",
+            session: {
+                session_id: "s1",
+                primary_model_id: null,
+                messages: [
+                    { id: "1", role: "assistant", kind: "clarification", content: "Old?", created_at: "",
+                      clarification_id: "c0", options: [{ id: "x", label: "A" }], open: false },
+                    { id: "2", role: "assistant", kind: "clarification", content: "Which?", created_at: "",
+                      clarification_id: "c1", options: [{ id: "y", label: "B" }], open: true },
+                ],
+            },
+        });
+
+        expect(state.messages.map((m) => m.open)).toEqual([false, true]);
+        expect(state.messages[1].clarificationId).toBe("c1");
+    });
+
+    it("ignores events it doesn't know (a newer backend) instead of losing the chat", () => {
+        const before = asked();
+        const after = chatReducer(before, {
+            type: "event",
+            event: { type: "chart" } as unknown as StreamEvent,
+        });
+
+        expect(after).toBe(before);
+    });
+});
+
 describe("chatReducer", () => {
     it("builds an answer from a streamed turn", () => {
         const state = run([
@@ -242,7 +300,13 @@ describe("ApiClient", () => {
 
         expect(events.map((e) => e.type)).toEqual(["session", "token", "done"]);
         const sent = JSON.parse(String((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body));
-        expect(sent).toEqual({ question: "q", session_id: null, primary_model_id: "sales-ds", report_filters: [] });
+        expect(sent).toEqual({
+            question: "q",
+            session_id: null,
+            primary_model_id: "sales-ds",
+            report_filters: [],
+            choice: null,
+        });
     });
 });
 

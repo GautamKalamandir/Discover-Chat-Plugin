@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { TableData } from "../api/types";
+import { ClarificationOption, TableData } from "../api/types";
 import { ChatMessage, stageLabel } from "../chat/store";
 import { Block, Inline, parseMarkdown } from "./markdown";
 
@@ -101,14 +101,54 @@ export function ResultTable({ table }: { table: TableData }): React.JSX.Element 
 
 // --- messages -------------------------------------------------------------------------------------
 
+/** The answers to a clarification (ADR 0014): one button each, plus "None of these", which hands
+ * over to typing. Disabled while answering and once the question is answered. */
+export function ClarificationOptions({
+    options,
+    disabled,
+    onChoose,
+    onNone,
+}: {
+    options: ClarificationOption[];
+    disabled: boolean;
+    onChoose: (option: ClarificationOption) => void;
+    onNone: () => void;
+}): React.JSX.Element {
+    return (
+        <div className="options" role="group" aria-label="Choose an answer">
+            {options.map((option) => (
+                <button
+                    key={option.id}
+                    type="button"
+                    className="option"
+                    disabled={disabled}
+                    onClick={() => onChoose(option)}
+                >
+                    {option.label}
+                </button>
+            ))}
+            <button type="button" className="option none" disabled={disabled} onClick={onNone}>
+                None of these
+            </button>
+        </div>
+    );
+}
+
 export function MessageView({
     message,
     stage,
+    busy = false,
+    onChoose,
+    onNone,
 }: {
     message: ChatMessage;
     stage: string | null;
+    busy?: boolean;
+    onChoose?: (message: ChatMessage, option: ClarificationOption) => void;
+    onNone?: () => void;
 }): React.JSX.Element {
     const label = message.pending ? stageLabel(stage) : null;
+    const options = message.kind === "clarification" ? (message.options ?? []) : [];
     return (
         <div className={`msg ${message.role} ${message.kind}`} data-testid={`msg-${message.kind}`}>
             {message.role === "user" ? (
@@ -119,6 +159,14 @@ export function MessageView({
                         <ResultTable key={i} table={t} />
                     ))}
                     {message.text && <Markdown text={message.text} />}
+                    {options.length > 0 && (
+                        <ClarificationOptions
+                            options={options}
+                            disabled={busy || !message.open}
+                            onChoose={(option) => onChoose?.(message, option)}
+                            onNone={() => onNone?.()}
+                        />
+                    )}
                     {label && (
                         <p className="stage" role="status">
                             {label}
@@ -134,10 +182,12 @@ export function Composer({
     busy,
     onSend,
     onStop,
+    inputRef,
 }: {
     busy: boolean;
     onSend: (question: string) => void;
     onStop: () => void;
+    inputRef?: React.Ref<HTMLTextAreaElement>;
 }): React.JSX.Element {
     const [text, setText] = React.useState("");
     const send = (): void => {
@@ -151,6 +201,7 @@ export function Composer({
     return (
         <div className="composer">
             <textarea
+                ref={inputRef}
                 aria-label="Ask a question about your data"
                 placeholder="Ask a question about your data…"
                 rows={2}

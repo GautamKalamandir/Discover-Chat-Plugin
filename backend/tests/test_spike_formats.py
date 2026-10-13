@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 from mcp.types import CallToolResult, TextContent
 
-from app.agent.values import _matches, value_hints
+from app.agent.resolution import Candidate, Evidence, TermEvidence, _candidates_by_term
 from app.core.config import Settings
 from app.diagnostics.capture import mask_text_payload
 from app.powerbi.errors import DaxQueryError
@@ -108,10 +108,12 @@ def test_value_search_results_are_qualified_with_their_table() -> None:
         }
     }
 
-    assert _matches(payload) == [
-        ("'Dim_Product'[LOB]", "GOLD"),
-        ("'NET SALES MASTER'[LOB]", "GOLD"),
-    ]
+    assert _candidates_by_term(payload) == {
+        "gold": [
+            Candidate("'Dim_Product'[LOB]", "GOLD", 1.0),
+            Candidate("'NET SALES MASTER'[LOB]", "GOLD", 1.0),
+        ]
+    }
 
 
 # --- REST executeQueries ------------------------------------------------------------------------
@@ -199,7 +201,7 @@ def test_capture_keeps_result_column_names_but_masks_values() -> None:
     assert table["rows"] == [["<text:4>"]]
 
 
-def test_value_hints_rank_matches_per_word() -> None:
+def test_value_evidence_shows_the_best_matches_per_word_first() -> None:
     payload = {
         "Results": {
             "surar": [
@@ -209,8 +211,10 @@ def test_value_hints_rank_matches_per_word() -> None:
             ]
         }
     }  # fmt: skip
+    candidates = sorted(_candidates_by_term(payload)["surar"], key=lambda c: -c.score)
+    evidence = Evidence([TermEvidence("m", "surar", None, True, None, candidates)])
 
-    assert value_hints(payload) == [
-        '"surar": \'NET SALES MASTER\'[Location Name] = "SURAT" (match score 0.86)',
-        '"surar": \'Dim Key\'[Location] = "SURAT" (match score 0.71)',
+    assert evidence.lines() == [
+        '"surar": \'NET SALES MASTER\'[Location Name] = "SURAT" (match score 0.86); '
+        "'Dim Key'[Location] = \"SURAT\" (match score 0.71)"
     ]

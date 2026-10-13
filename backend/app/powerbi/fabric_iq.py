@@ -111,11 +111,17 @@ class FabricIqMcpGateway(PowerBIGateway):
         return GatewayPayload(data=_payload_from_result(result), gateway=self.name)
 
     async def search_values(
-        self, user_token: str, dataset_id: str, terms: list[str]
+        self,
+        user_token: str,
+        dataset_id: str,
+        terms: list[str],
+        *,
+        scope: list[dict[str, Any]] | None = None,
     ) -> GatewayPayload:
-        result = await self._call(
-            user_token, VALUE_SEARCH, {"artifactId": dataset_id, "searchTerms": terms}
-        )
+        arguments: dict[str, Any] = {"artifactId": dataset_id, "searchTerms": terms}
+        if scope:
+            arguments["scope"] = scope  # tool contract (spike capture 2026-10-08)
+        result = await self._call(user_token, VALUE_SEARCH, arguments)
         return GatewayPayload(data=_payload_from_result(result), gateway=self.name)
 
     # --- diagnostics (Phase 2 spikes) -----------------------------------------------------------

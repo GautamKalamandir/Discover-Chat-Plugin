@@ -163,6 +163,40 @@ async def test_follow_up_continues_the_same_conversation(make_harness: Any) -> N
     assert "PREVIOUS TURN" in h.llm.calls[2][-1].content
 
 
+async def test_options_are_streamed_restored_and_a_click_answers_them(make_harness: Any) -> None:
+    h = await make_harness()
+    silver = {**GOLD_STEP, "filters": [{"column": "Product[LOB]", "op": "=", "values": ["SILVER"]}]}
+    h.llm.replies += [
+        plan(
+            status="clarify",
+            clarification="Which line of business?",
+            options=[
+                {"label": "Gold", "steps": [GOLD_STEP]},
+                {"label": "Silver", "steps": [silver]},
+            ],
+        ),
+        grounded_answer,
+    ]
+    _, first = await h.ask("user-a", "sales this FY?")
+    asked = next(e["data"] for e in first if e["event"] == "clarification")
+    session_id = first[0]["data"]["session_id"]
+    assert [o["label"] for o in asked["options"]] == ["Gold", "Silver"] and asked["id"]
+
+    url = f"/api/v1/chat/sessions/{session_id}"
+    restored = (await h.client.get(url, headers=headers("user-a"))).json()["messages"][-1]
+    assert (restored["kind"], restored["open"]) == ("clarification", True)
+    assert restored["clarification_id"] == asked["id"]
+    assert restored["options"] == asked["options"]  # labels and ids only, no stored plans
+
+    choice = {"clarification_id": asked["id"], "option_id": asked["options"][0]["id"]}
+    _, second = await h.ask("user-a", "Gold", session_id=session_id, choice=choice)
+
+    assert len(h.llm.calls) == 2  # the click needed no planning call
+    assert [e["event"] for e in second if e["event"] in ("table", "done")] == ["table", "done"]
+    messages = (await h.client.get(url, headers=headers("user-a"))).json()["messages"]
+    assert [m["open"] for m in messages if m["kind"] == "clarification"] == [False]
+
+
 async def test_new_chat_and_delete(make_harness: Any) -> None:
     h = await make_harness()
     created = await h.client.post(

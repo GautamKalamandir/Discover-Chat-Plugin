@@ -53,9 +53,27 @@ class DevSyntheticGateway(PowerBIGateway):
         )
 
     async def search_values(
-        self, user_token: str, dataset_id: str, terms: list[str]
+        self,
+        user_token: str,
+        dataset_id: str,
+        terms: list[str],
+        *,
+        scope: list[dict[str, Any]] | None = None,
     ) -> GatewayPayload:
-        return GatewayPayload(data=[], gateway=self.name)
+        """Synthetic rows exist for any value, so a search scoped to columns finds each term in each
+        of them exactly (ValueSearch's shape); an unscoped search finds nothing."""
+        columns = [
+            (entry["tableName"], name)
+            for entry in scope or []
+            if entry.get("tableName")
+            for name in entry.get("columnNames") or []
+        ]
+        results = {
+            term: [{"Table": t, "Column": c, "Value": term, "Score": 1.0} for t, c in columns]
+            for term in terms
+            if columns
+        }
+        return GatewayPayload(data={"Results": results}, gateway=self.name)
 
 
 def _number(dataset_id: str, alias: str, combo: list[str]) -> float:

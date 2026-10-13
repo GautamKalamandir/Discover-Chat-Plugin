@@ -1,6 +1,6 @@
 // Pure chat state (used with React's useReducer, unit-tested without a DOM).
 
-import { SessionDetail, StreamEvent, TableData } from "../api/types";
+import { ClarificationOption, SessionDetail, StreamEvent, TableData } from "../api/types";
 
 export type MessageKind = "question" | "answer" | "clarification" | "notice" | "error";
 
@@ -11,6 +11,10 @@ export interface ChatMessage {
     text: string;
     tables: TableData[];
     pending: boolean;
+    /** Clarifications (ADR 0014): the options to click while `open`. */
+    clarificationId?: string | null;
+    options?: ClarificationOption[];
+    open?: boolean;
 }
 
 export interface ChatState {
@@ -70,6 +74,9 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
                     text: m.content,
                     tables: [],
                     pending: false,
+                    clarificationId: m.clarification_id ?? null,
+                    options: m.options ?? [],
+                    open: Boolean(m.open && m.options?.length),
                 })),
             };
         case "reset":
@@ -80,7 +87,8 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
                 busy: true,
                 stage: "understanding",
                 messages: [
-                    ...state.messages,
+                    // Asking anything (a click or a typed reply) answers the open question.
+                    ...state.messages.map((m) => (m.open ? { ...m, open: false } : m)),
                     { id: `${action.id}-q`, role: "user", kind: "question", text: action.question, tables: [], pending: false },
                     { id: `${action.id}-a`, role: "assistant", kind: "answer", text: "", tables: [], pending: true },
                 ],
@@ -104,11 +112,22 @@ function applyEvent(state: ChatState, event: StreamEvent): ChatState {
             return updateLast(state, (m) => ({ ...m, tables: [...m.tables, event] }));
         case "token":
             return updateLast(state, (m) => ({ ...m, text: m.text + event.text }));
-        case "clarification":
-            return updateLast(state, (m) => ({ ...m, kind: "clarification", text: event.question }));
+        case "clarification": {
+            const options = event.options ?? [];
+            return updateLast(state, (m) => ({
+                ...m,
+                kind: "clarification",
+                text: event.question,
+                clarificationId: event.id ?? null,
+                options,
+                open: options.length > 0,
+            }));
+        }
         case "error":
             return updateLast(state, (m) => ({ ...m, kind: "error", text: event.message }));
         case "done":
             return finish(state);
+        default:
+            return state; // an event this version doesn't know (newer backend): ignored
     }
 }

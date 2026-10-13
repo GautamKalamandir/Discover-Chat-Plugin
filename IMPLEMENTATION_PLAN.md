@@ -21,7 +21,7 @@
 6. [Authorization model](#6-authorization-model)
 7. [Security scenario matrix](#7-security-scenario-matrix)
 8. [Proposed repository layout](#8-proposed-repository-layout)
-9. [Phase plan (0 → 13)](#9-phase-plan)
+9. [Phase plan (0 → 14)](#9-phase-plan)
 10. [API surface](#10-api-surface)
 11. [Risks & mitigations](#11-risks--mitigations)
 12. [Open questions (to be answered one by one)](#12-open-questions)
@@ -831,6 +831,36 @@ lead time) **or** private visual + device-code auth. Tenant onboarding guide for
 
 ---
 
+### Phase 14 — Agent-led clarification with options & value resolution 🔍 CODE DONE 2026-10-13, live check pending
+**Goal:** the agent decides, with evidence from the user's own data, whether to proceed, ask a question with clickable
+options, or say it can't answer. The server only verifies (ADR 0014). Triggered by the live "kismaba" test: a
+misspelt or prefixed store name ("STR - KOSAMBA") answered "no data".
+
+Tasks:
+- **Value evidence** (`app/agent/resolution.py`, replaces `resolve_values` and the value-hint re-plan): ValueSearch
+  as the user, scoped to the filter's column, then model-wide; DAX distinct-values fallback (D5); exact values switch
+  to the stored spelling with no extra LLM call; otherwise one LLM decision with the evidence.
+- **Options** (`QueryPlan.options`, `assumptions`, `answers_previous_clarification`): every option validated like a
+  plan (G2, visible schema, values that exist for the user); stored with opaque ids on the clarification message;
+  running periods asked with two options.
+- **Choice** on `POST /chat/stream` resumes the validated option without planning; `GET /chat/sessions/{id}` returns
+  the options of the latest open clarification.
+- **Visual:** option buttons plus "None of these"; prerequisite fixes (unknown events ignored, a stream that ends
+  without `done` no longer leaves the chat busy).
+- **Prompts:** clarification principles instead of word rules; the "this/last year = FY" rule removed (D6).
+- Settings `AGENT_MAX_CLARIFICATIONS` (3, D9), `AGENT_MAX_OPTIONS` (5), `VALUE_FALLBACK_MAX_VALUES`,
+  `VALUE_CACHE_MINUTES`.
+
+Tests: evidence and fallback units; pipeline tests (ask → click runs with no planner call, agent proceeds on its
+own, invalid options dropped, forbidden model denied, stale or forged choices rejected, loop limit); chat API choice
+round trip; visual option buttons and robustness fixes. Live: "sales of kismaba till now" in the Developer visual.
+
+**Delivered:** backend 498 tests pass (23 new), visual 45 pass (7 new); ruff, mypy, eslint and tsc clean.
+**Not verified yet:** the real LLM's choices with real evidence, and the visual in Power BI: rows Q1–Q10 and W1–W2
+of [docs/e2e-checklist.md](docs/e2e-checklist.md).
+
+---
+
 ## 10. API surface
 
 | Method | Path | Auth | Purpose |
@@ -842,7 +872,7 @@ lead time) **or** private visual + device-code auth. Tenant onboarding guide for
 | GET | `/api/v1/models/{model_id}` | user + authz | Model summary (403 if not allowed) |
 | GET | `/api/v1/models/{model_id}/schema` | user + authz | User-visible (OLS-aware) schema summary |
 | POST | `/api/v1/models/{model_id}/refresh-metadata` | admin | Trigger metadata re-sync |
-| POST | `/api/v1/chat/stream` | user | Chat (SSE) |
+| POST | `/api/v1/chat/stream` | user | Chat (SSE). Optional `choice {clarification_id, option_id}` answers a clarification (ADR 0014) |
 | GET | `/api/v1/chat/sessions/{id}` | user (owner) | Session history |
 
 **No public "execute arbitrary DAX" endpoint.** Query validation/execution are internal service calls used only by the

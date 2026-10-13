@@ -89,12 +89,30 @@ Check each number against the same figure on your report pages.
 | P5 | `Net sales by LOB this year` → then `only top 3` | Top 3 LOBs | |
 | P6 | `Show me the sales` | A clarification question back, or a clearly stated default | |
 
+## 6a. Misspelt names and clarifying questions with options (ADR 0014)
+
+The agent decides whether to ask. "Asks" rows pass if it asks with sensible options **or** picks the obviously
+meant value and says so; they fail if it answers "no data" for a value that exists.
+
+| ID | Ask | Expected | ✅/❌ |
+|---|---|---|---|
+| Q1 | `let me know all sales of kismaba till now` | Option buttons (for example **STR - KOSAMBA**), or a clear "showing STR - KOSAMBA". Never "no data was found for kismaba". | |
+| Q2 | Click **STR - KOSAMBA** in Q1's card | The clicked label appears as your message; the answer is for STR - KOSAMBA; the buttons are now greyed out | |
+| Q3 | `net sales of kosamba this year` (correct spelling, no `STR -` prefix) | Answers for STR - KOSAMBA without "no data" | |
+| Q4 | `sales of surar` | Answers for SURAT, or asks with SURAT among the options | |
+| Q5 | `net sales of xyzzy` | "I couldn't find "xyzzy" in the data available to you…" | |
+| Q6 | In a card, click **None of these**, then type the name | The cursor moves to the message box; the typed reply is answered | |
+| Q7 | Ask Q1, switch report page and back, then click an option | The card comes back clickable and the click is answered | |
+| Q8 | Ask Q1, then ask something else, then click an old option | "That option is no longer available…" | |
+| Q9 | `total sales till now` | The agent asks which period, or answers stating the period it used | |
+| Q10 | A store hidden from you by RLS (ask a colleague with a different store scope) | Never offered as an option and never named | |
+
 ## 7. "Why did it change"
 
 | ID | Ask | Expected | ✅/❌ |
 |---|---|---|---|
-| W1 | `Why is gold selling low in 2026-2027 compared to 2025-2026?` | **Asks first:** the same dates in both years, or full 2025-26 vs 2026-27 so far? | |
-| W2 | Reply `same dates` | Total table plus up to 3 breakdowns (e.g. store, category, month) with **Change** and **Change %**. The answer gives the overall change, the biggest drops and gains with **% of the change**, and ends with the "data can't show outside reasons" note. | |
+| W1 | `Why is gold selling low in 2026-2027 compared to 2025-2026?` | **Asks first, with two buttons:** the same dates in both years, or full 2025-26 vs 2026-27 so far | |
+| W2 | Click the **Same dates** button (or reply `same dates`) | Total table plus up to 3 breakdowns (e.g. store, category, month) with **Change** and **Change %**. The answer gives the overall change, the biggest drops and gains with **% of the change**, and ends with the "data can't show outside reasons" note. | |
 | W3 | `Why did diamond sales grow from 2024-2025 to 2025-2026?` | No question first (both years complete). Same kind of answer. | |
 | W4 | After W2: `break it down by vendor instead` | The same analysis, by Vendor Name | |
 | W5 | `Why did sales drop because of the gold price?` | Explains where the drop happened. **Doesn't** claim the gold price as the cause. | |

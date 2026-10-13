@@ -98,7 +98,9 @@ async def test_same_question_two_users_each_gets_their_own_rls_result(env: Env) 
         events = await env.run(agent, user, "What are GOLD sales?")
         tables[user] = next(e for e in events if isinstance(e, TableEvent)).rows
 
-    assert gateway.tokens == ["pbi-token-user-a", "pbi-token-user-b"]  # no shared cache
+    # Each user's own token, in order (no shared cache). Without ValueSearch the GOLD filter is
+    # also checked with a distinct-values query, run as the same user (ADR 0014).
+    assert list(dict.fromkeys(gateway.tokens)) == ["pbi-token-user-a", "pbi-token-user-b"]
     assert tables["user-a"] != tables["user-b"]
 
 

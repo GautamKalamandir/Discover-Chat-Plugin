@@ -12,7 +12,7 @@ import functools
 import logging
 import random
 from collections.abc import Awaitable, Callable
-from typing import Protocol, TypeVar
+from typing import Any, Protocol, TypeVar
 
 from app.auth.token_broker import TokenBroker
 from app.authz import messages
@@ -87,13 +87,18 @@ class PowerBIService:
 
     @requires_model_access("model_id")
     async def search_values(
-        self, authz: AuthorizedContext, *, model_id: str, terms: list[str]
+        self,
+        authz: AuthorizedContext,
+        *,
+        model_id: str,
+        terms: list[str],
+        scope: list[dict[str, Any]] | None = None,
     ) -> GatewayPayload:
         return await self._run(
             authz,
             model_id,
             GatewayCapability.VALUE_SEARCH,
-            lambda g, t: g.search_values(t, model_id, terms),
+            lambda g, t: g.search_values(t, model_id, terms, scope=scope),
         )
 
     # --- orchestration -------------------------------------------------------------------------

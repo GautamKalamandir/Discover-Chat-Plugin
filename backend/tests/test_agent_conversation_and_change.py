@@ -319,7 +319,14 @@ async def test_why_question_on_a_forbidden_model_is_denied(env: Env) -> None:
 class ValueSearchGateway(WrappedGateway):
     """dev_synthetic that finds "sivler" as the stored LOB value SILVER (like Fabric IQ)."""
 
-    async def search_values(self, user_token: str, dataset_id: str, terms: list[str]) -> Any:
+    async def search_values(
+        self,
+        user_token: str,
+        dataset_id: str,
+        terms: list[str],
+        *,
+        scope: list[dict[str, Any]] | None = None,
+    ) -> Any:
         self.queries.append(f"VALUESEARCH {terms}")
         results = {
             t: [{"Table": "Product", "Column": "LOB", "Value": "SILVER", "Score": 0.82}]

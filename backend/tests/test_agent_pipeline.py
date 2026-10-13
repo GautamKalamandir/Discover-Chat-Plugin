@@ -98,8 +98,15 @@ class WrappedGateway(PowerBIGateway):
             user_token, dataset_id, dax, max_rows=max_rows, user_key=user_key
         )
 
-    async def search_values(self, user_token: str, dataset_id: str, terms: list[str]) -> Any:
-        return await self.inner.search_values(user_token, dataset_id, terms)
+    async def search_values(
+        self,
+        user_token: str,
+        dataset_id: str,
+        terms: list[str],
+        *,
+        scope: list[dict[str, Any]] | None = None,
+    ) -> Any:
+        return await self.inner.search_values(user_token, dataset_id, terms, scope=scope)
 
 
 @dataclass

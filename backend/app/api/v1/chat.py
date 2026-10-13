@@ -15,6 +15,7 @@ from fastapi import APIRouter, Request, Response, status
 from pydantic import BaseModel, Field
 from sse_starlette import EventSourceResponse, ServerSentEvent
 
+from app.agent.models import ClarificationChoice
 from app.agent.orchestrator import Agent
 from app.authz import messages
 from app.authz.dependencies import AuthorizedDep, AuthzService
@@ -45,6 +46,8 @@ class StreamRequest(BaseModel):
     question: str = Field(min_length=1, max_length=20_000)
     primary_model_id: str | None = Field(default=None, max_length=100)
     report_filters: list[ReportFilter] = Field(default_factory=list, max_length=20)
+    # A click on an option of the open clarification; `question` is then the option's label.
+    choice: ClarificationChoice | None = None
 
 
 class NewSessionRequest(BaseModel):
@@ -58,12 +61,21 @@ class SessionOut(BaseModel):
     last_activity_at: datetime
 
 
+class OptionOut(BaseModel):
+    id: str
+    label: str
+
+
 class MessageOut(BaseModel):
     id: uuid.UUID
     role: Literal["user", "assistant"]
     kind: Literal["question", "answer", "clarification", "notice"]
     content: str
     created_at: datetime
+    # Clarifications (ADR 0014): the options asked; only the latest one can still be clicked.
+    clarification_id: str | None = None
+    options: list[OptionOut] = Field(default_factory=list)
+    open: bool = False
 
 
 class SessionDetail(SessionOut):
@@ -159,14 +171,25 @@ async def get_session(
             chat, limit=settings.agent_history_turns * 2
         )
     out = []
-    for message in stored:
+    for index, message in enumerate(stored):
         context = message.resolved_context or {}
+        extra: dict[str, Any] = {}
         if message.role is MessageRole.USER:
             kind = "question"
         elif "plan" in context:
             kind = "answer"
         elif context.get("status") == "clarify":
             kind = "clarification"
+            options = [
+                OptionOut(id=str(o["id"]), label=str(o["label"]))
+                for o in context.get("options") or []
+                if isinstance(o, dict) and "id" in o and "label" in o
+            ]
+            extra = {
+                "clarification_id": context.get("clarification_id"),
+                "options": options,
+                "open": bool(options) and index == len(stored) - 1,
+            }
         else:
             kind = "notice"
         out.append(
@@ -176,6 +199,7 @@ async def get_session(
                 kind=kind,
                 content=message.content,
                 created_at=message.created_at,
+                **extra,
             )
         )
     return SessionDetail(**_session_out(authz, chat).model_dump(), messages=out)
@@ -233,6 +257,7 @@ async def stream(
                 question,
                 primary_model_id=primary,
                 report_filters=[f.model_dump() for f in body.report_filters] or None,
+                choice=body.choice,
             )
             async for event in with_time_limit(turn, settings.chat_turn_timeout_seconds):
                 yield agent_event(event, next(seq))

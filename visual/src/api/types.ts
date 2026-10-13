@@ -13,12 +13,28 @@ export interface SessionUser {
     display_name: string | null;
 }
 
+/** An answer the user can click (ADR 0014); the id is only valid for its clarification. */
+export interface ClarificationOption {
+    id: string;
+    label: string;
+}
+
+/** A click on an option of the open clarification. */
+export interface Choice {
+    clarificationId: string;
+    optionId: string;
+}
+
 export interface StoredMessage {
     id: string;
     role: "user" | "assistant";
     kind: "question" | "answer" | "clarification" | "notice";
     content: string;
     created_at: string;
+    clarification_id?: string | null;
+    options?: ClarificationOption[];
+    /** Only the latest clarification can still be answered by a click. */
+    open?: boolean;
 }
 
 export interface SessionDetail {
@@ -45,7 +61,13 @@ export type StreamEvent =
     | { type: "status"; stage: string }
     | ({ type: "table" } & TableData)
     | { type: "token"; text: string }
-    | { type: "clarification"; question: string }
+    | {
+          type: "clarification";
+          question: string;
+          id?: string | null;
+          options?: ClarificationOption[];
+          allow_free_text?: boolean;
+      }
     | { type: "error"; code: string; message: string }
     | { type: "done"; message_id: string | null; query_ids: string[] };
 

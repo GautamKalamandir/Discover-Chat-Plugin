@@ -21,10 +21,18 @@ def untrusted(text: str) -> str:
 
 
 class Planner:
-    def __init__(self, llm: LLMProvider, *, fiscal_start_month: int, max_steps: int) -> None:
+    def __init__(
+        self,
+        llm: LLMProvider,
+        *,
+        fiscal_start_month: int,
+        max_steps: int,
+        max_options: int = 5,
+    ) -> None:
         self._llm = llm
         self._fiscal_start_month = fiscal_start_month
         self._max_steps = max_steps
+        self._max_options = max_options
         self._schema = json.dumps(QueryPlan.model_json_schema(), separators=(",", ":"))
 
     def _system(self, today: date) -> str:
@@ -33,6 +41,7 @@ class Planner:
             .replace("{fiscal_start_month}", str(self._fiscal_start_month))
             .replace("{today}", today.isoformat())
             .replace("{max_steps}", str(self._max_steps))
+            .replace("{max_options}", str(self._max_options))
             .replace("{schema}", self._schema)
         )
 
@@ -79,16 +88,33 @@ class Planner:
             QueryPlan,
         )
 
-    async def replan_with_values(
-        self, messages: list[ChatMessage], previous: QueryPlan, hints: list[str]
+    async def resolve(
+        self,
+        messages: list[ChatMessage],
+        previous: QueryPlan,
+        evidence: list[str],
+        *,
+        may_ask: bool,
     ) -> QueryPlan:
-        """One more try after words the plan couldn't place were found as values in the data."""
+        """The agent decides what the user meant, given what their words are in the data
+        (ADR 0014)."""
         feedback = (
-            "Some words you could not place were found as values in the data (word: column = "
-            "stored value, match score). The user may have misspelt them. Use a match as a filter "
-            "when it fits the question, with the stored value exactly as given. Words that still "
-            'don\'t fit stay in "unresolved_terms".\n' + untrusted("\n".join(hints)[:3000])
+            "Before running your plan, the words used as filter values, and the words you could "
+            "not place, were looked up in the user's own data. EVIDENCE lists each word with the "
+            "column it was used for and the closest stored values (match score 1.0 = exact). "
+            "Decide what the user means. Use a stored value exactly as written in EVIDENCE when "
+            "one reading is clearly meant. When several readings are plausible and would give "
+            'different answers, ask: "status": "clarify", one short question in '
+            '"clarification", and '
+            '"options", each a complete plan using stored values from EVIDENCE. If the data has '
+            'nothing that fits, return "cannot_answer" with the words in "unresolved_terms".'
         )
+        if not may_ask:
+            feedback += (
+                " You may not ask the user another question for this request: choose the most "
+                'likely reading, or return "cannot_answer".'
+            )
+        feedback += "\nEVIDENCE\n" + untrusted("\n".join(evidence)[:4000])
         return await self._llm.complete_json(
             [
                 *messages,

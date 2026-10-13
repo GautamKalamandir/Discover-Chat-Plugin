@@ -1,10 +1,11 @@
 """The structured plan the LLM must produce (validated by pydantic, then by the server)."""
 
 import re
+import uuid
 from datetime import date
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # "Table[Name]" or "'Table Name'[Name]"
 _REF = re.compile(r"^\s*'?(?P<table>[^'\[\]]+?)'?\s*\[(?P<name>[^\]]+)\]\s*$")
@@ -91,18 +92,61 @@ class ChangeAnalysis(BaseModel):
     )
 
 
+class ClarificationOption(BaseModel):
+    """One answer the user can pick (ADR 0014): a short label and the complete plan it runs."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    label: str = Field(min_length=1, max_length=80, description="What the user clicks")
+    steps: list[PlanStep] = Field(default_factory=list, max_length=8)
+    combine: Literal["none", "compare"] = "none"
+    change: ChangeAnalysis | None = None
+
+
 class QueryPlan(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     status: Literal["ready", "clarify", "cannot_answer", "help"]
     help_topic: Literal["greeting", "capabilities", "data_sources", "out_of_scope"] | None = None
     clarification: str | None = Field(default=None, max_length=300)
+    options: list[ClarificationOption] = Field(
+        default_factory=list,
+        max_length=8,
+        description="With status clarify: the answers the user can pick, each a complete plan",
+    )
     unresolved_terms: list[str] = Field(default_factory=list, max_length=10)
     steps: list[PlanStep] = Field(default_factory=list, max_length=8)
     combine: Literal["none", "compare"] = "none"
     change: ChangeAnalysis | None = Field(
         default=None, description="For 'why did X change / what drove it' questions, not steps"
     )
+    assumptions: list[str] = Field(
+        default_factory=list,
+        description="Interpretations you chose that the user might not expect (optional)",
+    )
+    answers_previous_clarification: bool = Field(
+        default=False,
+        description="True when the QUESTION answers the clarification in the PREVIOUS TURN",
+    )
+
+    @field_validator("assumptions")
+    @classmethod
+    def _short_assumptions(cls, value: list[str]) -> list[str]:
+        return [a.strip()[:160] for a in value if a.strip()][:3]
+
+    @classmethod
+    def from_option(cls, option: ClarificationOption) -> "QueryPlan":
+        """The ready plan a validated option runs."""
+        return cls(status="ready", steps=option.steps, combine=option.combine, change=option.change)
+
+
+class ClarificationChoice(BaseModel):
+    """The user's click on an option: ids the server generated when it asked."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    clarification_id: uuid.UUID
+    option_id: uuid.UUID
 
 
 class RepairedDax(BaseModel):

@@ -45,6 +45,8 @@ class Facts:
     data_sources: set[str] = field(default_factory=set)
     change: dict[str, Any] | None = None  # explain-change analysis (app/agent/change.py)
     notes: list[str] = field(default_factory=list)  # must be stated in the answer
+    # Interpretations the planner chose (ADR 0014): the answer mentions them when they matter.
+    assumptions: list[str] = field(default_factory=list)
 
     def as_dict(self) -> dict[str, Any]:
         facts: dict[str, Any] = {
@@ -55,6 +57,8 @@ class Facts:
             facts["change"] = self.change
         if self.notes:
             facts["notes"] = self.notes
+        if self.assumptions:
+            facts["assumptions"] = self.assumptions
         return facts
 
     def numbers(self) -> list[float]:

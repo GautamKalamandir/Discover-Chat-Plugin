@@ -62,8 +62,14 @@ class PowerBIGateway(ABC):
         raise CapabilityNotSupportedError(f"{self.name} cannot read model schemas")
 
     async def search_values(
-        self, user_token: str, dataset_id: str, terms: list[str]
+        self,
+        user_token: str,
+        dataset_id: str,
+        terms: list[str],
+        *,
+        scope: list[dict[str, Any]] | None = None,
     ) -> GatewayPayload:
+        """`scope` restricts the search: [{"tableName": T, "columnNames": [C, ...]}, ...]."""
         raise CapabilityNotSupportedError(f"{self.name} cannot search values")
 
     async def aclose(self) -> None:  # noqa: B027 - optional hook

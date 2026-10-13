@@ -1,9 +1,9 @@
 import * as React from "react";
 
 import { ApiClient } from "../api/client";
-import { ApiError, ModelOption, ReportFilter } from "../api/types";
+import { ApiError, Choice, ClarificationOption, ModelOption, ReportFilter } from "../api/types";
 import { AuthUnavailableError, AUTH_MESSAGES } from "../auth/tokenProvider";
-import { chatReducer, initialState } from "../chat/store";
+import { ChatMessage, chatReducer, initialState } from "../chat/store";
 import { ConversationStore } from "../storage";
 import { Composer, MessageView } from "./components";
 import { DiagnosticsContext, DiagnosticsPanel } from "./DiagnosticsPanel";
@@ -27,6 +27,8 @@ export interface AppProps {
     diagnostics?: DiagnosticsContext;
 }
 
+export const INTERRUPTED = "The answer was interrupted. Please try again.";
+
 function userMessage(error: unknown): string {
     if (error instanceof AuthUnavailableError || error instanceof ApiError) return error.message;
     return "Something went wrong. Please try again.";
@@ -39,6 +41,7 @@ export function App(props: AppProps): React.JSX.Element {
     const [authError, setAuthError] = React.useState<string | null>(null);
     const abort = React.useRef<AbortController | null>(null);
     const end = React.useRef<HTMLDivElement | null>(null);
+    const input = React.useRef<HTMLTextAreaElement | null>(null);
     const storeKey = modelId ?? "none";
 
     // Sign-in: the backend tells us who it believes is signed in (Power BI identity, Q1).
@@ -90,24 +93,40 @@ export function App(props: AppProps): React.JSX.Element {
 
     React.useEffect(() => () => abort.current?.abort(), []);
 
-    const send = async (question: string): Promise<void> => {
+    const send = async (question: string, choice: Choice | null = null): Promise<void> => {
         const controller = new AbortController();
         abort.current = controller;
         dispatch({ type: "asked", id: String(Date.now()), question });
+        let finished = false;
         try {
             for await (const event of client.ask(
-                { question, sessionId: state.sessionId, primaryModelId: modelId, reportFilters },
+                {
+                    question,
+                    sessionId: state.sessionId,
+                    primaryModelId: modelId,
+                    reportFilters,
+                    choice,
+                },
                 controller.signal,
             )) {
                 dispatch({ type: "event", event });
                 if (event.type === "session") await conversations.save(storeKey, event.session_id);
+                if (event.type === "done") finished = true;
             }
+            // The connection closed before the answer finished (restart, network): never stay busy.
+            if (!finished) dispatch({ type: "failed", message: INTERRUPTED });
         } catch (e) {
             if (controller.signal.aborted) dispatch({ type: "stopped" });
             else dispatch({ type: "failed", message: userMessage(e) });
         } finally {
             abort.current = null;
         }
+    };
+
+    // A click on an option: the label becomes the user's message, the ids say what was chosen.
+    const choose = (message: ChatMessage, option: ClarificationOption): void => {
+        if (state.busy || !message.open || !message.clarificationId) return;
+        void send(option.label, { clarificationId: message.clarificationId, optionId: option.id });
     };
 
     const newChat = async (): Promise<void> => {
@@ -162,7 +181,14 @@ export function App(props: AppProps): React.JSX.Element {
                             <p className="empty">Ask a question about your data to get started.</p>
                         )}
                         {state.messages.map((m) => (
-                            <MessageView key={m.id} message={m} stage={state.stage} />
+                            <MessageView
+                                key={m.id}
+                                message={m}
+                                stage={state.stage}
+                                busy={state.busy}
+                                onChoose={choose}
+                                onNone={() => input.current?.focus()}
+                            />
                         ))}
                         <div ref={end} />
                     </div>
@@ -170,6 +196,7 @@ export function App(props: AppProps): React.JSX.Element {
                         busy={state.busy}
                         onSend={(q) => void send(q)}
                         onStop={() => abort.current?.abort()}
+                        inputRef={input}
                     />
                 </>
             )}

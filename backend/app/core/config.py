@@ -38,6 +38,12 @@ DEFAULT_AGENT_MAX_REPAIRS = 2
 DEFAULT_AGENT_RESULT_ROWS_TO_LLM = 50
 DEFAULT_AGENT_TABLE_ROWS = 200
 DEFAULT_AGENT_CONTEXT_DOCS = 12
+# ADR 0014: loop guard for clarifying questions, and how many options a question may offer.
+DEFAULT_AGENT_MAX_CLARIFICATIONS = 3
+DEFAULT_AGENT_MAX_OPTIONS = 5
+# Distinct values read per column when ValueSearch is unavailable (Fabric IQ maxRows <= 1000).
+DEFAULT_VALUE_FALLBACK_MAX_VALUES = 1000
+DEFAULT_VALUE_CACHE_MINUTES = 10
 # Models with more visible columns than this get a table-selection step before planning.
 DEFAULT_AGENT_TABLE_SELECTION_MIN_COLUMNS = 80
 DEFAULT_FISCAL_YEAR_START_MONTH = 4  # Q13c: April-March
@@ -72,6 +78,10 @@ _FALLBACKS = {
     "agent_result_rows_to_llm": DEFAULT_AGENT_RESULT_ROWS_TO_LLM,
     "agent_table_rows": DEFAULT_AGENT_TABLE_ROWS,
     "agent_context_docs": DEFAULT_AGENT_CONTEXT_DOCS,
+    "agent_max_clarifications": DEFAULT_AGENT_MAX_CLARIFICATIONS,
+    "agent_max_options": DEFAULT_AGENT_MAX_OPTIONS,
+    "value_fallback_max_values": DEFAULT_VALUE_FALLBACK_MAX_VALUES,
+    "value_cache_minutes": DEFAULT_VALUE_CACHE_MINUTES,
     "chat_turn_timeout_seconds": DEFAULT_CHAT_TURN_TIMEOUT_SECONDS,
     "chat_questions_per_minute": DEFAULT_CHAT_QUESTIONS_PER_MINUTE,
     "chat_max_concurrent_turns": DEFAULT_CHAT_MAX_CONCURRENT_TURNS,
@@ -176,6 +186,10 @@ class Settings(BaseSettings):
         "agent_result_rows_to_llm",
         "agent_table_rows",
         "agent_context_docs",
+        "agent_max_clarifications",
+        "agent_max_options",
+        "value_fallback_max_values",
+        "value_cache_minutes",
         "chat_turn_timeout_seconds",
         "chat_questions_per_minute",
         "chat_max_concurrent_turns",
@@ -264,6 +278,11 @@ class Settings(BaseSettings):
     agent_context_docs: int = DEFAULT_AGENT_CONTEXT_DOCS
     agent_table_selection_min_columns: int = DEFAULT_AGENT_TABLE_SELECTION_MIN_COLUMNS
     fiscal_year_start_month: int = DEFAULT_FISCAL_YEAR_START_MONTH
+    # Clarifying questions with options (ADR 0014).
+    agent_max_clarifications: int = DEFAULT_AGENT_MAX_CLARIFICATIONS
+    agent_max_options: int = DEFAULT_AGENT_MAX_OPTIONS
+    value_fallback_max_values: int = DEFAULT_VALUE_FALLBACK_MAX_VALUES
+    value_cache_minutes: int = DEFAULT_VALUE_CACHE_MINUTES
 
     @field_validator("agent_table_selection_min_columns", mode="before")
     @classmethod

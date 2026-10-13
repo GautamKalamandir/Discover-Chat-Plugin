@@ -170,6 +170,24 @@
       border-left: 3px solid var(--accent);
     }
 
+    // Answers to a clarification (ADR 0014).
+    .options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 6px 0 2px;
+
+      .option {
+        border-radius: 14px;
+        background: var(--bg);
+        text-align: left;
+      }
+
+      .option.none {
+        border-style: dashed;
+      }
+    }
+
     .stage {
       font-style: italic;
       opacity: 0.7;

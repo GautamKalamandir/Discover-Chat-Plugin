@@ -2,11 +2,11 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import * as React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ApiClient } from "../src/api/client";
+import { ApiClient, AskRequest } from "../src/api/client";
 import { ApiError, StreamEvent } from "../src/api/types";
 import { AuthUnavailableError } from "../src/auth/tokenProvider";
 import { ConversationStore } from "../src/storage";
-import { App, AppProps } from "../src/ui/App";
+import { App, AppProps, INTERRUPTED } from "../src/ui/App";
 
 afterEach(cleanup);
 
@@ -71,7 +71,8 @@ describe("App", () => {
         expect(screen.getByText("Total Net Sales").tagName).toBe("TH");
         expect(screen.getByText("1,200.50").tagName).toBe("STRONG");
         expect(props.client.ask).toHaveBeenCalledWith(
-            { question: "GOLD sales?", sessionId: null, primaryModelId: "sales-ds", reportFilters: props.reportFilters },
+            { question: "GOLD sales?", sessionId: null, primaryModelId: "sales-ds", reportFilters: props.reportFilters,
+              choice: null },
             expect.any(AbortSignal),
         );
     });
@@ -136,6 +137,75 @@ describe("App", () => {
 
         await waitFor(() => expect(aborted).toBe(true));
         expect(await screen.findByText("Stopped.")).toBeTruthy();
+    });
+
+    it("a clicked option is sent as the choice and its label as the user's message", async () => {
+        const asks = vi.fn(async function* (request: AskRequest): AsyncGenerator<StreamEvent> {
+            if (!request.choice) {
+                yield { type: "session", session_id: "s1", correlation_id: null };
+                yield {
+                    type: "clarification",
+                    question: "Which store did you mean?",
+                    id: "c1",
+                    options: [
+                        { id: "o1", label: "STR - KOSAMBA" },
+                        { id: "o2", label: "STR - KIM" },
+                    ],
+                };
+                yield { type: "done", message_id: "m1", query_ids: [] };
+                return;
+            }
+            yield { type: "token", text: "KOSAMBA sales were **9,615,688,770**." };
+            yield { type: "done", message_id: "m2", query_ids: [] };
+        });
+        renderApp({ client: fakeClient({ ask: asks }) });
+        await screen.findByText("Signed in as User A");
+
+        fireEvent.change(screen.getByLabelText("Ask a question about your data"), {
+            target: { value: "sales of kismaba" },
+        });
+        fireEvent.click(screen.getByLabelText("Send question"));
+        fireEvent.click(await screen.findByRole("button", { name: "STR - KOSAMBA" }));
+
+        await screen.findByText("9,615,688,770");
+        expect(asks.mock.calls[1][0]).toMatchObject({
+            question: "STR - KOSAMBA",
+            sessionId: "s1",
+            choice: { clarificationId: "c1", optionId: "o1" },
+        });
+        expect((screen.getByRole("button", { name: "STR - KIM" }) as HTMLButtonElement).disabled).toBe(
+            true,
+        ); // answered: no second click
+    });
+
+    it("'None of these' hands over to typing", async () => {
+        const asks = vi.fn(async function* (): AsyncGenerator<StreamEvent> {
+            yield { type: "clarification", question: "Which?", id: "c1", options: [{ id: "o1", label: "A" }] };
+            yield { type: "done", message_id: "m1", query_ids: [] };
+        });
+        renderApp({ client: fakeClient({ ask: asks }) });
+        await screen.findByText("Signed in as User A");
+        fireEvent.change(screen.getByLabelText("Ask a question about your data"), { target: { value: "q" } });
+        fireEvent.click(screen.getByLabelText("Send question"));
+
+        fireEvent.click(await screen.findByRole("button", { name: "None of these" }));
+
+        expect(document.activeElement).toBe(screen.getByLabelText("Ask a question about your data"));
+        expect(asks).toHaveBeenCalledTimes(1);
+    });
+
+    it("a stream that ends without 'done' doesn't leave the chat busy", async () => {
+        const asks = vi.fn(async function* (): AsyncGenerator<StreamEvent> {
+            yield { type: "session", session_id: "s1", correlation_id: null };
+            yield { type: "token", text: "Partial" };
+        });
+        renderApp({ client: fakeClient({ ask: asks }) });
+        await screen.findByText("Signed in as User A");
+        fireEvent.change(screen.getByLabelText("Ask a question about your data"), { target: { value: "q" } });
+        fireEvent.click(screen.getByLabelText("Send question"));
+
+        expect(await screen.findByText(INTERRUPTED)).toBeTruthy();
+        expect(screen.queryByLabelText("Stop answering")).toBeNull();
     });
 
     it("hints authors to pick a model when none is chosen", async () => {
