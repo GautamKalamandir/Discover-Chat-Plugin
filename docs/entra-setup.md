@@ -18,6 +18,7 @@ semantic models **using each user's own Power BI permissions** (single sign-on).
 | 5 | Name **2–3 test users** with different model access (one under row-level security, if used) and a test workspace with ≥ 3 semantic models | Power BI admin / workspace owner | Security testing |
 | 6 | Tell us whether **Conditional Access** policies apply to Power BI (MFA, compliant device, location) | Entra admin | Token exchange behaviour |
 | 7 | *(Optional)* A second, small app registration for the **admin metadata-sync command** (details in §4) | Entra admin | Admin-triggered metadata sync |
+| 8 | Enable **Allow downloads from custom visuals** (§3) | Fabric / Power BI administrator | Saving the `/summary` report as a PDF inside Power BI |
 
 ---
 
@@ -102,6 +103,7 @@ whole organization.
 | **Add and use certified visuals only (block uncertified)** | Power BI visuals | Must be **off** for the pilot (or the visual added to Organizational visuals) |
 | **Dataset Execute Queries REST API** | Integration settings | Fallback query path (requires the user to have Build permission on the model) |
 | **Users can use the Power BI Model Context Protocol server endpoint (preview)** | Integration settings | Microsoft's MCP query endpoint |
+| **Allow downloads from custom visuals** | Power BI visuals | Lets the chatbot save the `/summary` report as a PDF in Power BI. Each download is confirmed by the user. Without it, the chatbot opens a one-time link (valid 60 seconds) in a new browser tab instead |
 
 Primary query path: Microsoft's **Fabric IQ MCP server** (`https://fabriciq.svc.cloud.microsoft/v1/mcp/fabriciq`).
 Microsoft documents it as available only when the tenant's **home region supports all Fabric workloads**. Please
@@ -130,6 +132,9 @@ only what the signed-in admin can already see.
 - Question text, model metadata and query results are sent to the configured LLM provider. The provider choice will be
   reviewed with you before production.
 - Production distribution of the visual is planned through AppSource, which Microsoft requires for visual SSO.
+- `/summary` reports are built only when the user asks, with their own token; nothing runs in the background as the
+  user. Reports contain business figures. They are stored on the backend for 7 days, readable only by the user who
+  made them, then deleted by a daily job.
 
 ## References
 
@@ -138,3 +143,4 @@ only what the signed-in admin can already see.
 - Power BI visuals tenant settings — https://learn.microsoft.com/en-us/fabric/admin/service-admin-portal-power-bi-visuals
 - Execute Queries REST API — https://learn.microsoft.com/en-us/rest/api/power-bi/datasets/execute-queries
 - Fabric IQ MCP server — https://learn.microsoft.com/en-us/fabric/iq/connectors/fabric-iq-mcp
+- File download API for custom visuals — https://learn.microsoft.com/en-us/power-bi/developer/visuals/file-download-api

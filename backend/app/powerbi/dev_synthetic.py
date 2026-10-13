@@ -7,6 +7,8 @@ exists. Answers built on it carry a "Development data" note. It reads the group-
 
 import hashlib
 import re
+from collections.abc import Callable
+from datetime import date, timedelta
 from typing import Any
 
 from app.core.config import Environment, Settings
@@ -17,6 +19,9 @@ _STRING = re.compile(r'"((?:[^"]|"")*)"')
 _COLUMN = re.compile(r"'((?:[^']|'')+)'\[((?:[^\]]|\]\])+)\]")
 _NESTED = ("TREATAS", "FILTER", "CALCULATETABLE", "KEEPFILTERS", "ALL")
 GROUPS = ("DEV-A", "DEV-B", "DEV-C")
+# Column aliases of the /summary latest-day query (app/reports/facts.py).
+LATEST_DATE = "Latest date"
+PREVIOUS_DATE = "Previous date"
 
 
 class DevSyntheticGateway(PowerBIGateway):
@@ -24,17 +29,26 @@ class DevSyntheticGateway(PowerBIGateway):
     capabilities = frozenset({GatewayCapability.EXECUTE, GatewayCapability.VALUE_SEARCH})
     requires_user_token = False
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, *, today: Callable[[], date] = date.today) -> None:
         if settings.environment not in (Environment.LOCAL, Environment.TEST):
             env = settings.environment
             raise ConfigurationError(f"POWERBI_GATEWAY=dev_synthetic is not allowed in {env=}")
+        self._today = today
 
     async def execute_dax(
         self, user_token: str, dataset_id: str, dax: str, *, max_rows: int, user_key: str
     ) -> QueryResult:
+        aliases = [m.group(1).replace('""', '"') for m in _STRING.finditer(_strip_nested(dax))]
+        if LATEST_DATE in aliases:
+            # /summary "latest day with data" query (ADR 0015): yesterday and the day before.
+            yesterday = self._today() - timedelta(days=1)
+            dates: dict[str, Any] = {
+                f"[{LATEST_DATE}]": yesterday.isoformat(),
+                f"[{PREVIOUS_DATE}]": (yesterday - timedelta(days=1)).isoformat(),
+            }
+            return QueryResult(list(dates), [dates], truncated=False, gateway=self.name)
         groups = _group_columns(dax)
         filters = _filter_values(dax)
-        aliases = [m.group(1).replace('""', '"') for m in _STRING.finditer(_strip_nested(dax))]
         aliases = [a for a in aliases if a] or ["Value"]
         keys = [[f"{t}[{c}]", *filters.get(f"{t}[{c}]", GROUPS)] for t, c in groups]
 

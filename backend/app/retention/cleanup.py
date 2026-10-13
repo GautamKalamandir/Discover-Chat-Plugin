@@ -4,7 +4,8 @@
   cascade with them)
 - audit_events older than AUDIT_RETENTION_HOURS
 - expired authorization-cache rows (they are re-verified against Power BI anyway)
-- users with no remaining conversations who haven't been seen within either window
+- users with no remaining conversations or /summary reports who haven't been seen within either
+  window (reports have their own daily deletion job, ADR 0015)
 - semantic documents not seen by any metadata sync for METADATA_STALE_DAYS (ADR 0007)
 """
 
@@ -17,7 +18,14 @@ from sqlalchemy import CursorResult, Delete, delete, exists, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
-from app.db.models import AuditEvent, ChatSession, SemanticDocument, User, UserModelAccess
+from app.db.models import (
+    AuditEvent,
+    ChatSession,
+    SemanticDocument,
+    SummaryReport,
+    User,
+    UserModelAccess,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +72,7 @@ async def run_cleanup(
         delete(User).where(
             User.last_seen_at < user_cutoff,
             ~exists().where(ChatSession.user_id == User.id),
+            ~exists().where(SummaryReport.user_id == User.id),
         ),
     )
 

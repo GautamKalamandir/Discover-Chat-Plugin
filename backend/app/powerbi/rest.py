@@ -6,6 +6,7 @@ Limits: one query/table per call, 100k rows / 1M values / 15 MB, 120 queries/min
 
 import logging
 import re
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -13,6 +14,7 @@ import httpx
 from app.core.config import Settings
 from app.powerbi.base import GatewayCapability, PowerBIGateway, QueryResult
 from app.powerbi.errors import (
+    CapabilityNotSupportedError,
     DaxQueryError,
     GatewayUnavailableError,
     PowerBIAccessDeniedError,
@@ -29,7 +31,7 @@ _DENIED = {401, 403, 404}
 
 class PowerBiRestGateway(PowerBIGateway):
     name = "rest"
-    capabilities = frozenset({GatewayCapability.EXECUTE})
+    capabilities = frozenset({GatewayCapability.EXECUTE, GatewayCapability.REFRESH_INFO})
     requires_build_permission = True
 
     def __init__(
@@ -79,6 +81,36 @@ class PowerBiRestGateway(PowerBIGateway):
             columns=columns_of(rows), rows=rows[:max_rows], truncated=truncated, gateway=self.name
         )
 
+    async def last_refresh(self, user_token: str, dataset_id: str) -> datetime | None:
+        """`GET datasets/{id}/refreshes`: the newest completed refresh (ADR 0015).
+
+        Viewers may not be allowed to read refresh history. A refusal here only means "not
+        available": it must never be taken for lost access to the model's data."""
+        try:
+            response = await self._http().get(
+                f"{self._base_url}/datasets/{dataset_id}/refreshes",
+                headers={"Authorization": f"Bearer {user_token}"},
+                params={"$top": "5"},
+            )
+        except httpx.TimeoutException as exc:
+            raise PowerBITimeoutError("refreshes timed out") from exc
+        except httpx.HTTPError as exc:
+            raise GatewayUnavailableError(f"refreshes transport error: {exc!r}") from exc
+
+        status = response.status_code
+        if status in _DENIED:
+            raise CapabilityNotSupportedError(f"refreshes HTTP {status}")
+        if status == 429:
+            raise PowerBIThrottledError("refreshes throttled", _retry_after(response))
+        if status != 200:
+            raise GatewayUnavailableError(f"refreshes HTTP {status}")
+        body = _json(response)
+        refreshes = body.get("value") if isinstance(body, dict) else None
+        for refresh in refreshes if isinstance(refreshes, list) else []:
+            if isinstance(refresh, dict) and refresh.get("status") == "Completed":
+                return _parse_time(refresh.get("endTime"))
+        return None
+
     def _http(self) -> httpx.AsyncClient:
         if self._client is None:
             self._client = httpx.AsyncClient(timeout=self._timeout)
@@ -113,6 +145,16 @@ def _error_message(body: Any) -> str | None:
                 return re.sub(r"</?oii>", "", str(value))
     message = error.get("message") or error.get("code")
     return str(message) if message else None
+
+
+def _parse_time(value: Any) -> datetime | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
 
 
 def _retry_after(response: httpx.Response) -> float | None:

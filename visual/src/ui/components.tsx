@@ -140,14 +140,18 @@ export function MessageView({
     busy = false,
     onChoose,
     onNone,
+    children,
 }: {
     message: ChatMessage;
     stage: string | null;
     busy?: boolean;
     onChoose?: (message: ChatMessage, option: ClarificationOption) => void;
     onNone?: () => void;
+    /** Extra content in the bubble (a /summary report). */
+    children?: React.ReactNode;
 }): React.JSX.Element {
-    const label = message.pending ? stageLabel(stage) : null;
+    const progress = message.kind === "report" ? (message.report?.progress ?? null) : stageLabel(stage);
+    const label = message.pending ? progress : null;
     const options = message.kind === "clarification" ? (message.options ?? []) : [];
     return (
         <div className={`msg ${message.role} ${message.kind}`} data-testid={`msg-${message.kind}`}>
@@ -159,6 +163,7 @@ export function MessageView({
                         <ResultTable key={i} table={t} />
                     ))}
                     {message.text && <Markdown text={message.text} />}
+                    {children}
                     {options.length > 0 && (
                         <ClarificationOptions
                             options={options}

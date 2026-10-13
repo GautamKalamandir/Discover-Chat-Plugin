@@ -6,6 +6,7 @@
 .venv/
 .cache/
 spikes/
+data/
 tests/
 scripts/
 __pycache__/

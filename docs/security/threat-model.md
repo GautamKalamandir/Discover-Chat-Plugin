@@ -51,7 +51,11 @@ flowchart LR
 | I5 | **Information disclosure:** tokens or user content in logs | Logging | Q18 policy; redacting formatter; chatty libraries pinned to WARNING | `test_no_user_content_reaches_the_logs`, `test_tokens_never_reach_the_logs` | Third-party exception text is redacted for secrets but not for content |
 | I6 | **Information disclosure:** data held by the LLM provider | LLM | Only allowed context and ≤ 50 rows sent; provider chosen in `.env` | — | **Accepted:** the provider sees questions and results; to be reviewed with IT before production (entra-setup §5) |
 | I7 | **Information disclosure:** data at rest | Postgres | No raw result rows stored (Q9c); retention cleanup; no data values in the index | `test_cleanup.py`, retention tests | DB encryption/backups: Phase 13 |
+| I8 | **Information disclosure:** `/summary` report files at rest (totals, changes, LLM text) | Report store | Owner-only API with identical 404s; atomic writes inside `REPORT_STORAGE_DIR` only (path guard); daily deletion after `REPORT_RETENTION_DAYS`; no raw rows (ADR 0015) | Phase 15a/15d tests | Volume encryption/backups: Phase 13 |
+| I9 | **Information disclosure:** a stored report outlives a removed model permission | Reports API | **Accepted exception** (ADR 0015 §11): no re-check when a report is opened; only its owner can open it, for up to `REPORT_RETENTION_DAYS` | design | **Accepted** by the product owner (2026-10-13) |
+| I10 | **Information disclosure:** one-time PDF link used by someone else | Reports API | 32-byte random token, stored only as a hash; single use (atomic); expires after `REPORT_DOWNLOAD_LINK_SECONDS` (60); `no-store`; same 404 for every invalid token; never logged | Phase 15d tests | Anyone holding the link in its first minute can download once |
 | D1 | **Denial of service:** flooding / runaway turns | Chat API | 20 questions/min, 2 parallel, one per conversation, 120 s timeout, cancel on disconnect, 64 KB bodies | `test_chat_api.py`, scenario 19 | **Limits are per instance** (Phase 13: shared store) |
+| D3 | **Denial of service:** repeated `/summary` builds | Reports API | One running build per user (unique DB index, across instances); same-day reuse; 600 s build limit; bounded queries per model | Phase 15d tests | Regenerate is not rate-limited beyond one build at a time |
 | D2 | **Denial of service:** Power BI throttling | Power BI path | Per-user REST limiter (120/min), backoff, friendly 429 | scenario 19 | — |
 | E1 | **Elevation of privilege:** acting beyond the user's own Power BI rights | Whole system | No service principal for data access; delegated OBO only; Fabric IQ refuses service principals | design (ADR 0005/0006) | — |
 | E2 | **Elevation of privilege:** unsafe production configuration | Startup | `production_problems()` refuses dev auth, `dev_synthetic`, CORS `*`, empty tenant list, dev settings, DEBUG logs; docs hidden in prod | `test_security_extras.py` | — |
@@ -70,3 +74,4 @@ flowchart LR
 | LLM provider data-processing review | Before production, with IT |
 | Shared rate limits across instances, DB encryption, backups, CI security gates | Phase 13 |
 | Real-model red-team run (`pytest -m network -k redteam`) | When `GROQ_API_KEY` is available |
+| Report storage volume protection (encryption, backups, access) | Phase 13 |

@@ -1,5 +1,6 @@
 """Stages 7-10: build/validate DAX, run it as the user, repair on DAX errors, record executions."""
 
+import functools
 import logging
 import uuid
 from collections.abc import Callable
@@ -53,14 +54,18 @@ class Executor:
     async def run_step(
         self,
         authz: AuthorizedContext,
-        chat: ChatSession,
+        chat: ChatSession | None,
         step: PlanStep,
         schema: NormalizedSchema,
         context: str,
         *,
         max_rows: int,
+        report_id: uuid.UUID | None = None,
     ) -> StepOutcome:
+        """Queries are recorded against the chat session, or against `report_id` for /summary
+        builds (ADR 0015)."""
         model_uuid = authz.allowed[step.model_id].model_uuid
+        record = functools.partial(self._record, chat, report_id, model_uuid)
         dax = step.custom_dax or build_dax(
             step, today=self._today(), fiscal_start_month=self._fiscal_start
         )
@@ -68,7 +73,7 @@ class Executor:
             try:
                 validate_dax(dax, schema)
             except DaxValidationError as exc:
-                await self._record(chat, model_uuid, dax, QueryStatus.REJECTED, error="rejected")
+                await record(dax, QueryStatus.REJECTED, error="rejected")
                 if attempt == self._max_repairs:
                     raise
                 dax = await self._planner.repair_dax(dax, exc.reason, context)
@@ -78,7 +83,7 @@ class Executor:
                     authz, model_id=step.model_id, dax=dax, max_rows=max_rows
                 )
             except DaxQueryError as exc:
-                await self._record(chat, model_uuid, dax, QueryStatus.FAILED, error="dax_error")
+                await record(dax, QueryStatus.FAILED, error="dax_error")
                 if attempt == self._max_repairs:
                     raise
                 logger.info("Repairing DAX for %s (attempt %d)", step.model_id, attempt + 1)
@@ -90,22 +95,18 @@ class Executor:
                     if exc.code in (ErrorCode.MODEL_ACCESS_DENIED, ErrorCode.NEEDS_BUILD_PERMISSION)
                     else QueryStatus.FAILED
                 )
-                await self._record(chat, model_uuid, dax, status, error=str(exc.code))
+                await record(dax, status, error=str(exc.code))
                 raise
-            query_id = await self._record(
-                chat,
-                model_uuid,
-                dax,
-                QueryStatus.SUCCEEDED,
-                gateway=result.gateway,
-                result=result,
+            query_id = await record(
+                dax, QueryStatus.SUCCEEDED, gateway=result.gateway, result=result
             )
             return StepOutcome(step, dax, result, query_id)
         raise AssertionError("unreachable")  # pragma: no cover
 
     async def _record(
         self,
-        chat: ChatSession,
+        chat: ChatSession | None,
+        report_id: uuid.UUID | None,
         model_uuid: uuid.UUID,
         dax: str,
         status: QueryStatus,
@@ -117,6 +118,7 @@ class Executor:
         async with self._sessionmaker() as session, session.begin():
             execution = await QueryExecutionRepository(session).record(
                 chat,
+                report_id=report_id,
                 gateway=gateway,
                 dax=dax,
                 status=status,

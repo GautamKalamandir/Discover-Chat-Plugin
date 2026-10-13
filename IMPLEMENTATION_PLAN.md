@@ -5,7 +5,7 @@
 
 | Item | Value |
 |---|---|
-| Status | **Phases 1, 3–11 DONE (2026-10-07). Phase 12 DEFERRED.** Phase 0 delivered by IT. **Phase 2 IN PROGRESS:** spike tooling built (Step 1); live runs next (docs/spikes-runbook.md), then analysis (Step 3) and the end-to-end test (Step 4) |
+| Status | **Phases 1, 3–11 DONE (2026-10-07). Phase 12 DEFERRED.** Phase 0 delivered by IT. **Phase 2 IN PROGRESS:** spike tooling built (Step 1); live runs next (docs/spikes-runbook.md), then analysis (Step 3) and the end-to-end test (Step 4). **Phase 14** code done, live check pending. **Phase 15** (`/summary` reports) code done 2026-10-13, live check pending |
 | Last research pass | 2026-10-06 (Microsoft Learn docs verified, see §13) |
 | Approval model | Each phase is implemented only after explicit approval. Nothing beyond the current approved phase is built. |
 
@@ -21,7 +21,7 @@
 6. [Authorization model](#6-authorization-model)
 7. [Security scenario matrix](#7-security-scenario-matrix)
 8. [Proposed repository layout](#8-proposed-repository-layout)
-9. [Phase plan (0 → 14)](#9-phase-plan)
+9. [Phase plan (0 → 15)](#9-phase-plan)
 10. [API surface](#10-api-surface)
 11. [Risks & mitigations](#11-risks--mitigations)
 12. [Open questions (to be answered one by one)](#12-open-questions)
@@ -36,6 +36,10 @@
 
 This applies to: direct questions, comparisons, follow-ups, indirect references, vector search, MCP tools, REST tools,
 DAX execution, schema/metadata, generated measures, cached results, logs, and error messages.
+
+> **One accepted exception (ADR 0015 §11):** a stored `/summary` report is built under this rule, but it isn't
+> re-checked when the user opens it again. For up to `REPORT_RETENTION_DAYS` it keeps showing what the user was
+> allowed to see when it was built. Only the user who built it can open it.
 
 Three rules derived from it:
 
@@ -861,6 +865,53 @@ of [docs/e2e-checklist.md](docs/e2e-checklist.md).
 
 ---
 
+### Phase 15 — `/summary` daily business report, PDF download, 7-day deletion 🔍 CODE DONE 2026-10-13, live check pending
+**Goal:** a user types `/summary` and gets a report on the latest day of data from every model they can access:
+- KPI changes against fixed baselines and where each change came from;
+- suggestions marked High / Medium / Low, each with a reason, notes and evidence;
+- a PDF download.
+
+Reports are kept 7 days and deleted by a daily job. Decisions: [ADR 0015](docs/adr/0015-summary-reports.md).
+Design: [docs/design/phase-15-summary-reports.md](docs/design/phase-15-summary-reports.md).
+
+**No creation cron:** a report is built only when `/summary` is typed, with the user's live token (§1). The first
+`/summary` of the day builds the report, later ones reuse it, and Regenerate builds a new one.
+
+Each sub-phase is implemented only after its own approval:
+
+| Step | Content | Status |
+|---|---|---|
+| 15.0 | ADR 0015, design note, ADR 0004 amendment, threat model, IT request, checklist, run-locally | ✅ DONE 2026-10-13 |
+| 15a | Settings, migration (`summary_reports`, `report_download_tokens`, `query_executions.report_id`), `ReportStore`, repository, daily deletion job (scheduler + `python -m app.jobs.report_cleanup`), user cleanup keeps users with reports | ✅ DONE 2026-10-13: backend 565 tests pass (67 new); ruff, mypy, `alembic check` clean; migration round-trip verified. `tzdata` added (Windows has no zone data); `reportlab` moves to 15c, where it is used |
+| 15b | Report builder: agent picks KPIs and the changes to explain; server computes baselines and drivers (reuses explain-change), grounds every number, drops suggestions without evidence; refresh time; admin KPI pins CLI; dev gateway dates | ✅ DONE 2026-10-13: backend 604 tests pass (39 new); ruff, mypy clean. Help-text mention of `/summary` moved to 15e (it only works once the visual handles it) |
+| 15c | PDF renderer (ReportLab): cover, summary, KPI tables, driver charts, suggestions by priority | ✅ DONE 2026-10-13: backend 617 tests pass (13 new); `reportlab` 5 added. Built-in Helvetica covers Latin text only: text in other scripts (e.g. Gujarati store names) renders without error but won't display correctly until a Unicode font is bundled |
+| 15d | API + background builds (one per user), SSE progress, history, PDF, one-time download link, audit events | ✅ DONE 2026-10-13: backend 635 tests pass (18 new); ruff, mypy clean; new tests tagged for security scenarios 1, 7, 10, 12, 16, 22 |
+| 15e | Visual: `/summary`, report view, Regenerate, Previous reports, Download PDF (download API → one-time link fallback), `ExportContent` privilege | ✅ DONE 2026-10-13: visual 72 tests pass (27 new); tsc, eslint clean; `pbiviz package` accepts `ExportContent`. Help text mentions `/summary` |
+
+**Accepted exception:** a stored report is not re-checked against current model access when it is opened
+(ADR 0015 §11).
+
+**Phase 15.1: report quality** (ADR 0015 amendment 1, design §9). Planned after the first live report on
+2026-10-13. Covers: the MIS persona, Indian number format, four charts, green/red by KPI direction, "No activity now"
+alerts, suggestions with where / who / by when, and the at-a-glance table for users with many models.
+
+| Step | Content | Status |
+|---|---|---|
+| 15.1.0 | ADR amendment, design §9, checklist R13–R20 | ✅ DONE 2026-10-13 |
+| 15.1a | Backend analysis, prompts, formatting, text clean-up, new queries, suggestion fields, settings | ✅ DONE 2026-10-13: backend 666 tests pass (31 new); ruff, mypy clean |
+| 15.1b | PDF redesign | ✅ DONE 2026-10-13: backend 675 tests pass (9 new); layout checked on a rendered sample |
+| 15.1c | Visual report view (charts, colours, overview, progress counts) | ✅ DONE 2026-10-13: visual 78 tests pass (6 new); tsc, eslint clean; `pbiviz package` builds |
+
+**Delivered:** backend 635 tests, visual 72 tests; ruff, mypy, tsc, eslint clean.
+**Not verified yet:** a real build with the live LLM and Power BI, and the download prompt inside Power BI: rows R1–R12
+of [docs/e2e-checklist.md](docs/e2e-checklist.md). Needs the backend image rebuilt (migration 0004, `reportlab`,
+`tzdata`) and the visual reloaded.
+
+**IT dependency:** the admin switch "Allow downloads from custom visuals" ([docs/entra-setup.md](docs/entra-setup.md)
+§3). Until it is on, the one-time link is used.
+
+---
+
 ## 10. API surface
 
 | Method | Path | Auth | Purpose |
@@ -874,6 +925,11 @@ of [docs/e2e-checklist.md](docs/e2e-checklist.md).
 | POST | `/api/v1/models/{model_id}/refresh-metadata` | admin | Trigger metadata re-sync |
 | POST | `/api/v1/chat/stream` | user | Chat (SSE). Optional `choice {clarification_id, option_id}` answers a clarification (ADR 0014) |
 | GET | `/api/v1/chat/sessions/{id}` | user (owner) | Session history |
+| POST | `/api/v1/reports/summary` | user | Start or reuse today's `/summary` report (ADR 0015) |
+| GET | `/api/v1/reports` | user | The user's reports in the retention window |
+| GET | `/api/v1/reports/{id}`, `/events`, `/pdf` | user (owner) | Report content, build progress (SSE), PDF |
+| POST | `/api/v1/reports/{id}/download-link` | user (owner) | One-time PDF link (fallback when visual downloads are off) |
+| GET | `/api/v1/reports/download/{token}` | one-time token | PDF via the one-time link |
 
 **No public "execute arbitrary DAX" endpoint.** Query validation/execution are internal service calls used only by the
 tool layer, not HTTP routes exposed to the visual.
@@ -895,6 +951,8 @@ tool layer, not HTTP routes exposed to the visual.
 | LLM hallucinated numbers | Wrong business answers | Answer only from tool results. Eval suite |
 | REST 120 q/min/user | Throttling | Fewer, aggregated queries. Backoff |
 | AppSource review lead time | Launch delay | Start submission prep in parallel from Phase 10 |
+| Report files hold business figures at rest for 7 days | Data exposure from disk/backups | Owner-only API, retention job, volume protected like the DB (Phase 13), no raw rows (ADR 0015) |
+| `/summary` build outlives the user's token | Build fails with an auth error | 600 s build limit inside the ~1 h cached token; the user re-runs `/summary` |
 
 ---
 

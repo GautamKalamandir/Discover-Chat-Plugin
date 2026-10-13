@@ -11,6 +11,8 @@ class QueryExecutionRepository:
 
     By design there is no parameter for result rows: only DAX and result metadata are stored
     (ADR 0004). Callers pass `row_count` / `column_names` derived from the result.
+
+    The owner is a chat session or, for /summary builds, a report (`report_id`; ADR 0015).
     """
 
     def __init__(self, session: AsyncSession) -> None:
@@ -18,8 +20,9 @@ class QueryExecutionRepository:
 
     async def record(
         self,
-        chat: ChatSession,
+        chat: ChatSession | None,
         *,
+        report_id: uuid.UUID | None = None,
         gateway: str,
         dax: str,
         status: QueryStatus,
@@ -31,8 +34,11 @@ class QueryExecutionRepository:
         duration_ms: int | None = None,
         error_code: str | None = None,
     ) -> QueryExecution:
+        if (chat is None) == (report_id is None):
+            raise ValueError("a query execution belongs to exactly one chat session or report")
         execution = QueryExecution(
-            session_id=chat.id,
+            session_id=chat.id if chat is not None else None,
+            report_id=report_id,
             message_id=message_id,
             semantic_model_id=semantic_model_id,
             gateway=gateway,

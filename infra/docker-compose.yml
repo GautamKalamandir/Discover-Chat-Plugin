@@ -33,6 +33,7 @@ services:
       ENTRA_CLIENT_CERTIFICATE_PATH: /run/secrets/entra-key.pem
       EMBEDDING_CACHE_DIR: /cache/embeddings
       DIAGNOSTICS_CAPTURE_DIR: /app/spikes/captures
+      REPORT_STORAGE_DIR: /data/reports
     ports:
       - "8000:8000"
     volumes:
@@ -42,6 +43,8 @@ services:
       # Phase 2 capture bundles land on the host (gitignored).
       - ../backend/spikes/captures:/app/spikes/captures
       - embeddings:/cache/embeddings
+      # /summary report files (ADR 0015); deleted by the daily report cleanup.
+      - reports:/data/reports
     healthcheck:
       test: ["CMD", "python", "-c", "import ssl,urllib.request as u; u.urlopen('https://localhost:8000/api/v1/health', context=ssl._create_unverified_context())"]
       interval: 10s
@@ -77,3 +80,4 @@ services:
 volumes:
   pgdata:
   embeddings:
+  reports:

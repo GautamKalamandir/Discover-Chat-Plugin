@@ -1,4 +1,5 @@
-"""Power BI registry (workspaces, semantic models, reports) and the authorization cache rows."""
+"""Power BI registry (workspaces, semantic models, reports), /summary KPI pins and the
+authorization cache rows."""
 
 import uuid
 from collections.abc import Sequence
@@ -10,6 +11,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import (
     AccessStatus,
+    BusinessGlossaryEntry,
+    GlossaryEntryType,
     ModelStatus,
     Report,
     SemanticModel,
@@ -103,6 +106,49 @@ class RegistryRepository:
             .order_by(SemanticModel.name)
         )
         return (await self._session.scalars(stmt)).all()
+
+    # --- KPI pins for /summary reports (ADR 0015 §5) ---
+
+    async def list_kpi_pins(self, semantic_model_id: uuid.UUID) -> Sequence[BusinessGlossaryEntry]:
+        """KPIs an admin pinned for the model's report; `maps_to` is the measure reference."""
+        stmt = (
+            select(BusinessGlossaryEntry)
+            .where(
+                BusinessGlossaryEntry.semantic_model_id == semantic_model_id,
+                BusinessGlossaryEntry.entry_type == GlossaryEntryType.KPI_DEFINITION,
+            )
+            .order_by(BusinessGlossaryEntry.created_at)
+        )
+        return (await self._session.scalars(stmt)).all()
+
+    async def add_kpi_pin(
+        self, model: SemanticModel, *, measure: str, label: str, created_by: str | None = None
+    ) -> BusinessGlossaryEntry:
+        """Adds or relabels the pin for `measure`."""
+        for pin in await self.list_kpi_pins(model.id):
+            if pin.maps_to == measure:
+                pin.term = label
+                pin.definition = label
+                await self._session.flush()
+                return pin
+        pin = BusinessGlossaryEntry(
+            semantic_model_id=model.id,
+            entry_type=GlossaryEntryType.KPI_DEFINITION,
+            term=label,
+            definition=label,
+            maps_to=measure,
+            created_by=created_by,
+        )
+        self._session.add(pin)
+        await self._session.flush()
+        return pin
+
+    async def remove_kpi_pin(self, model: SemanticModel, measure: str) -> bool:
+        pins = [p for p in await self.list_kpi_pins(model.id) if p.maps_to == measure]
+        for pin in pins:
+            await self._session.delete(pin)
+        await self._session.flush()
+        return bool(pins)
 
     # --- authorization cache (policy lives in Phase 5) ---
 

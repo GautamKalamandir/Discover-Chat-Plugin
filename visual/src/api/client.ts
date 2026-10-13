@@ -4,11 +4,16 @@ import {
     ApiError,
     Choice,
     DiagnosticsSummary,
+    DownloadLink,
     ModelOption,
+    ReportDetail,
+    ReportEvent,
     ReportFilter,
+    ReportItem,
     SessionDetail,
     SessionUser,
     StreamEvent,
+    SummaryStarted,
 } from "./types";
 
 export interface AskRequest {
@@ -95,16 +100,44 @@ export class ApiClient {
             },
             signal,
         );
-        if (!response.body) throw new ApiError(0, "no_stream", "The answer could not be streamed.");
-        for await (const frame of readSse(response.body)) {
-            let data: Record<string, unknown>;
-            try {
-                data = JSON.parse(frame.data) as Record<string, unknown>;
-            } catch {
-                continue; // ignore anything that isn't one of our JSON events
-            }
-            yield { type: frame.event, ...data } as StreamEvent;
-        }
+        yield* events<StreamEvent>(response, "The answer could not be streamed.");
+    }
+
+    // --- /summary reports (ADR 0015) ---
+
+    /** Today's report, the build already running, or a new build (`regenerate`). */
+    async startSummary(regenerate = false): Promise<SummaryStarted> {
+        return this.json("POST", "/api/v1/reports/summary", { regenerate });
+    }
+
+    /** A build's progress. Aborting `signal` only stops watching: the build keeps going. */
+    async *reportEvents(reportId: string, signal?: AbortSignal): AsyncGenerator<ReportEvent> {
+        const response = await this.request("GET", `/api/v1/reports/${encodeURIComponent(reportId)}/events`, undefined, signal);
+        yield* events<ReportEvent>(response, "The report progress could not be shown.");
+    }
+
+    async listReports(): Promise<ReportItem[]> {
+        return (await this.json<{ reports: ReportItem[] }>("GET", "/api/v1/reports")).reports;
+    }
+
+    async getReport(reportId: string): Promise<ReportDetail> {
+        return this.json("GET", `/api/v1/reports/${encodeURIComponent(reportId)}`);
+    }
+
+    /** The PDF as base64, for Power BI's download API. */
+    async reportPdf(reportId: string): Promise<string> {
+        const response = await this.request("GET", `/api/v1/reports/${encodeURIComponent(reportId)}/pdf`);
+        return toBase64(new Uint8Array(await response.arrayBuffer()));
+    }
+
+    /** A one-time link, opened in the browser when Power BI blocks downloads from visuals. */
+    async downloadLink(reportId: string): Promise<DownloadLink> {
+        return this.json("POST", `/api/v1/reports/${encodeURIComponent(reportId)}/download-link`);
+    }
+
+    /** Absolute URL of a backend path (for host.launchUrl). */
+    url(path: string): string {
+        return `${this.baseUrl}${path}`;
     }
 
     private async json<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -135,6 +168,28 @@ export class ApiClient {
         }
         throw error;
     }
+}
+
+async function* events<T>(response: Response, failure: string): AsyncGenerator<T> {
+    if (!response.body) throw new ApiError(0, "no_stream", failure);
+    for await (const frame of readSse(response.body)) {
+        let data: Record<string, unknown>;
+        try {
+            data = JSON.parse(frame.data) as Record<string, unknown>;
+        } catch {
+            continue; // ignore anything that isn't one of our JSON events
+        }
+        yield { type: frame.event, ...data } as T;
+    }
+}
+
+/** Bytes -> base64 in chunks (a whole PDF at once can exceed the argument limit). */
+export function toBase64(bytes: Uint8Array): string {
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    }
+    return btoa(binary);
 }
 
 async function toApiError(response: Response): Promise<ApiError> {

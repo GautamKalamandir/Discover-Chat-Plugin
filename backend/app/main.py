@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.agent.orchestrator import Agent
 from app.api.v1 import dev as dev_api
 from app.api.v1 import diagnostics as diagnostics_api
+from app.api.v1 import reports as reports_api
 from app.api.v1.router import api_router
 from app.auth.base import AuthProvider
 from app.auth.factory import create_auth_provider
@@ -39,7 +40,10 @@ from app.llm.factory import create_llm_provider_for_app
 from app.powerbi.base import PowerBIGateway
 from app.powerbi.factory import create_gateways
 from app.powerbi.service import PowerBIService
-from app.retention.scheduler import CleanupScheduler
+from app.reports.builder import ReportBuilder
+from app.reports.manager import ReportBuildManager
+from app.reports.store import create_report_store
+from app.retention.scheduler import CleanupScheduler, ReportCleanupScheduler
 from app.semantic.indexer import SemanticIndexer
 from app.semantic.retriever import SemanticRetriever
 from app.semantic.schema_source import SchemaSource, create_schema_source
@@ -95,12 +99,33 @@ def create_app(
     scheduler = (
         CleanupScheduler(sessionmaker, settings) if settings.cleanup_scheduler_enabled else None
     )
+    # /summary reports (ADR 0015): built on request as the user, kept as files on the report
+    # store, deleted by a daily job.
+    report_store = create_report_store(settings)
+    report_manager = ReportBuildManager(
+        ReportBuilder(
+            llm_provider, retriever, user_schemas, powerbi_service, sessionmaker, settings
+        ),
+        report_store,
+        sessionmaker,
+        settings,
+    )
+    report_scheduler = (
+        ReportCleanupScheduler(sessionmaker, report_store, settings)
+        if settings.reports_enabled and settings.report_cleanup_scheduler_enabled
+        else None
+    )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         if scheduler:
             scheduler.start()
+        if report_scheduler:
+            report_scheduler.start()
         yield
+        await report_manager.aclose()
+        if report_scheduler:
+            await report_scheduler.stop()
         if scheduler:
             await scheduler.stop()
         await llm_provider.aclose()
@@ -131,6 +156,8 @@ def create_app(
     app.state.agent = agent
     app.state.llm = llm_provider
     app.state.turn_guard = TurnGuard(settings)
+    app.state.report_store = report_store
+    app.state.report_manager = report_manager
 
     register_error_handlers(app)
     app.include_router(api_router)
@@ -140,6 +167,8 @@ def create_app(
     ):
         # Local development only: lets the dev build of the visual sign in (ADR 0010).
         app.include_router(dev_api.router, prefix="/api/v1")
+    if settings.reports_enabled:
+        app.include_router(reports_api.router, prefix="/api/v1")
     if settings.diagnostics_enabled and not is_prod:
         # Phase 2 spikes: live checks as the signed-in user (docs/spikes-runbook.md).
         app.include_router(diagnostics_api.router, prefix="/api/v1")

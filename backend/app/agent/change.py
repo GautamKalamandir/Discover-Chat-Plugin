@@ -97,9 +97,12 @@ def _cap(period: Range, today: date) -> Range:
 
 
 def build_steps(
-    change: ChangeAnalysis, periods: ChangePeriods, *, max_steps: int
+    change: ChangeAnalysis, periods: ChangePeriods, *, max_steps: int, whole_days: bool = False
 ) -> list[PlanStep]:
-    """One step for the totals, one per breakdown (within the step limit), DAX built here."""
+    """One step for the totals, one per breakdown (within the step limit), DAX built here.
+
+    `whole_days` ends each period before the next midnight instead of at it, so a date-time
+    column keeps the rows later in the last day (the /summary report compares single days)."""
     if change.measure:
         parsed = parse_ref(change.measure)
         name = parsed[1] if parsed else change.measure.strip("[]")
@@ -117,9 +120,9 @@ def build_steps(
     def period_value(time_column: str, period: Range) -> str:
         col = column(time_column)
         start, end = period
+        upper = f"< {_date(end + timedelta(days=1))}" if whole_days else f"<= {_date(end)}"
         return (
-            f"CALCULATE({expression}, FILTER(ALL({col}), "
-            f"{col} >= {_date(start)} && {col} <= {_date(end)}))"
+            f"CALCULATE({expression}, FILTER(ALL({col}), {col} >= {_date(start)} && {col} {upper}))"
         )
 
     filters = [_filter_table(f) for f in change.filters]
@@ -185,6 +188,8 @@ def analyze_change(
     periods: ChangePeriods,
     outcomes: list[StepOutcome],
     model_name: str,
+    *,
+    top: int = TOP_MOVERS,
 ) -> Facts:
     total_before, total_after = (
         _period_values(outcomes[0].result.rows[0], periods)
@@ -238,8 +243,8 @@ def analyze_change(
         summary["breakdowns"].append(
             {
                 "by": name,
-                "biggest_decreases": [i for i in items if i["change"] < 0][:TOP_MOVERS],
-                "biggest_increases": [i for i in reversed(items) if i["change"] > 0][:TOP_MOVERS],
+                "biggest_decreases": [i for i in items if i["change"] < 0][:top],
+                "biggest_increases": [i for i in reversed(items) if i["change"] > 0][:top],
                 "items": len(items),
             }
         )

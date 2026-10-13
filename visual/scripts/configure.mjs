@@ -51,6 +51,8 @@ capabilities.privileges = [
     { name: "WebAccess", essential: true, parameters: [api.origin] },
     { name: "AADAuthentication", parameters: { COM: appIdUri } },
     { name: "LocalStorage", essential: false },
+    // Download PDF for /summary reports (ADR 0015); not essential: a one-time link is the fallback.
+    { name: "ExportContent", essential: false },
 ];
 writeFileSync(capabilitiesPath, JSON.stringify(capabilities, null, 4) + "\n");
 

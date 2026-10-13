@@ -12,6 +12,7 @@ import functools
 import logging
 import random
 from collections.abc import Awaitable, Callable
+from datetime import datetime
 from typing import Any, Protocol, TypeVar
 
 from app.auth.token_broker import TokenBroker
@@ -99,6 +100,17 @@ class PowerBIService:
             model_id,
             GatewayCapability.VALUE_SEARCH,
             lambda g, t: g.search_values(t, model_id, terms, scope=scope),
+        )
+
+    @requires_model_access("model_id")
+    async def last_refresh(self, authz: AuthorizedContext, *, model_id: str) -> datetime | None:
+        """When the model's data was last refreshed, as the user (ADR 0015). Gateways report a
+        refusal of this lookup as unsupported, so it never revokes access."""
+        return await self._run(
+            authz,
+            model_id,
+            GatewayCapability.REFRESH_INFO,
+            lambda g, t: g.last_refresh(t, model_id),
         )
 
     # --- orchestration -------------------------------------------------------------------------

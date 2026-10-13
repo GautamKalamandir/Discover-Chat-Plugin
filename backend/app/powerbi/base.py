@@ -7,6 +7,7 @@ through `PowerBIService`, which applies gate G3 first.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
@@ -17,6 +18,7 @@ class GatewayCapability(StrEnum):
     EXECUTE = "execute"
     SCHEMA = "schema"
     VALUE_SEARCH = "value_search"
+    REFRESH_INFO = "refresh_info"  # when the model's data was last refreshed (ADR 0015)
 
 
 @dataclass(frozen=True)
@@ -71,6 +73,10 @@ class PowerBIGateway(ABC):
     ) -> GatewayPayload:
         """`scope` restricts the search: [{"tableName": T, "columnNames": [C, ...]}, ...]."""
         raise CapabilityNotSupportedError(f"{self.name} cannot search values")
+
+    async def last_refresh(self, user_token: str, dataset_id: str) -> datetime | None:
+        """End time of the model's last completed refresh; None when there is none."""
+        raise CapabilityNotSupportedError(f"{self.name} cannot read refresh history")
 
     async def aclose(self) -> None:  # noqa: B027 - optional hook
         """Release network resources."""

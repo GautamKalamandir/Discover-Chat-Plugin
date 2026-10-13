@@ -89,7 +89,7 @@ async def _validate_change(
 
     measure = None
     if change.measure:
-        measure = _resolve_measure(change.measure, schema)
+        measure = resolve_measure(change.measure, schema)
         if measure is None:
             problems.append(f"unknown measure {change.measure}")
     elif change.aggregation:
@@ -106,12 +106,12 @@ async def _validate_change(
         raise PlanInvalidError(problems)
     # A raw date column gives one row per day: noise, not an explanation. Months come from a
     # month column; date-typed breakdowns are dropped (live test 2026-10-08).
-    drivers = [d for d in change.drivers if not _is_date_column(d, schema)]
+    drivers = [d for d in change.drivers if not is_date_column(d, schema)]
     fixed = change.model_copy(update={"measure": measure, "drivers": drivers})
     return ValidatedPlan(plan.model_copy(update={"change": fixed, "steps": []}), authz)
 
 
-def _is_date_column(ref: str, schema: NormalizedSchema) -> bool:
+def is_date_column(ref: str, schema: NormalizedSchema) -> bool:
     parsed = parse_ref(ref)
     if parsed is None:
         return False
@@ -131,7 +131,7 @@ def _check_step(step: PlanStep, schema: NormalizedSchema) -> tuple[PlanStep, lis
 
     measures = []
     for ref in step.measures:
-        resolved = _resolve_measure(ref, schema)
+        resolved = resolve_measure(ref, schema)
         if resolved is None:
             problems.append(f"unknown measure {ref}")
         else:
@@ -155,7 +155,7 @@ def _check_step(step: PlanStep, schema: NormalizedSchema) -> tuple[PlanStep, lis
     return step.model_copy(update={"measures": measures}), problems
 
 
-def _resolve_measure(ref: str, schema: NormalizedSchema) -> str | None:
+def resolve_measure(ref: str, schema: NormalizedSchema) -> str | None:
     """Accepts 'Table[Measure]' or a bare/bracketed measure name when it is unambiguous."""
     parsed = parse_ref(ref)
     if parsed is not None:

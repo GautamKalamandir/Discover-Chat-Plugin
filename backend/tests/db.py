@@ -71,8 +71,9 @@ async def db_session(test_database_url: str) -> AsyncIterator[AsyncSession]:
 
 
 APP_TABLES = (
-    "audit_events, query_executions, chat_messages, chat_sessions, user_model_access, "
-    "business_glossary, model_metadata, reports, semantic_models, workspaces, users, tenants"
+    "audit_events, query_executions, report_download_tokens, summary_reports, chat_messages, "
+    "chat_sessions, user_model_access, business_glossary, model_metadata, reports, "
+    "semantic_models, workspaces, users, tenants"
 )
 
 

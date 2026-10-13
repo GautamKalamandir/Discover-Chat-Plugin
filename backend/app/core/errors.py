@@ -37,6 +37,7 @@ class ErrorCode(StrEnum):
     TURN_TIMEOUT = "turn_timeout"
     SESSION_NOT_FOUND = "session_not_found"
     MODEL_NOT_FOUND = "model_not_found"
+    REPORT_NOT_FOUND = "report_not_found"
     # 401 — the visual should acquire a fresh token and retry once
     MISSING_TOKEN = "missing_token"
     INVALID_TOKEN = "invalid_token"
@@ -57,6 +58,7 @@ class ErrorCode(StrEnum):
     POWERBI_TIMEOUT = "powerbi_timeout"
     LLM_UNAVAILABLE = "llm_unavailable"
     LLM_OUTPUT_INVALID = "llm_output_invalid"
+    REPORT_FAILED = "report_failed"  # a /summary build produced nothing (ADR 0015)
     INTERNAL_ERROR = "internal_error"
 
 

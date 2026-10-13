@@ -183,6 +183,39 @@ Setup: open the other report → **Open semantic model** → copy the IDs from t
 | X5 | `List customer names and mobile numbers` | Note what happens. Your model contains Party Name / Mobile No, so decide whether that's acceptable. | |
 | X6 | 25 questions within one minute | From about the 21st: "You're asking questions very quickly…" | |
 
+## 13a. `/summary` daily report (Phase 15, ADR 0015)
+
+Setup: at least two models registered and enabled for you. Each check needs the matching sub-phase (15a–15e) to be
+built first.
+
+| ID | Do | Expected | ✅/❌ |
+|---|---|---|---|
+| R1 | Type `/summary` | Progress for each model, then a report: summary, a section per model with its data date (and refresh time when shown), KPI changes, and suggestions grouped High / Medium / Low | |
+| R2 | Check one KPI against the report for that date | The value matches Power BI for the same day | |
+| R3 | Each suggestion | It has a reason, notes and figures that appear in the report. Nothing invented | |
+| R4 | Type `/summary` again | The same report appears at once (no rebuild) | |
+| R5 | Click **Regenerate** | A new report is built. **Previous reports** lists both | |
+| R6 | Type `/summary`, then go to another page while it builds; come back and type `/summary` | The finished report appears (the build kept going) | |
+| R7 | **Download PDF** (admin switch ON) | Power BI asks to confirm; the PDF has the cover, summary, KPI tables, charts and suggestions | |
+| R8 | **Download PDF** (admin switch OFF) | A browser tab opens and downloads the PDF. Opening the same link again fails | |
+| R9 | Open a report from **Previous reports** | It opens and downloads | |
+| R10 | In Adminer, back-date a report's `created_at` by 8 days → run `python -m app.jobs.report_cleanup` | Its row and folder are gone; newer reports stay | |
+| R11 | User with **row-level security** types `/summary` | Their own figures, not company totals | |
+| R12 | Another user types `/summary` | Only their own reports appear in **Previous reports** | |
+
+### Report quality (Phase 15.1)
+
+| ID | Do | Expected | ✅/❌ |
+|---|---|---|---|
+| R13 | Read any amount in the report | Indian format (1,47,61,530.70 / 1.48 Cr), the same in the text, tables and charts | |
+| R14 | Read the text | No `■` characters, no ids such as `(k2.prev_day)`, no "a -56% decline" | |
+| R15 | KPI table | Actual values for the day, previous day, last week and month to date; changes green when better, red when worse | |
+| R16 | Charts in each section | Daily trend, KPI change overview, top and bottom performers, target achievement (when a target exists) | |
+| R17 | "No activity now" | Items with values in the last 7 days but none on the latest day are listed per breakdown | |
+| R18 | Suggestions | Each says what to do, where, who should act and by when, with figures from the report | |
+| R19 | A user with many data sources | The "At a glance" table lists every model; progress shows "(n of N)"; the build finishes within 30 minutes | |
+| R20 | Targets | A target measure is never the main KPI; achievement % shows where a target exists | |
+
 ## 14. Other users (InPrivate window per user)
 
 | ID | Who | Expected | ✅/❌ |

@@ -1,7 +1,13 @@
 # 0004. Data retention (Q9)
 
-- Status: Accepted
+- Status: Accepted, amended 2026-10-13 by [ADR 0015](0015-summary-reports.md)
 - Date: 2026-10-06
+
+> **Amendment (ADR 0015):**
+> - `/summary` reports (`summary_reports` rows and their `report.json` / `report.pdf` files) are kept for
+>   `REPORT_RETENTION_DAYS` (fallback **7**) × 24 h from creation. A separate daily job deletes them.
+> - They hold totals, changes and LLM-written text, **never raw result rows**.
+> - Users who still have reports are not deleted by the conversation cleanup.
 
 ## Decision
 

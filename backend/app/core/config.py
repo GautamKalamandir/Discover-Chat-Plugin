@@ -5,8 +5,10 @@ is selected here from environment variables / `.env` only — no code change is 
 """
 
 import logging
+from datetime import time
 from enum import StrEnum
 from functools import lru_cache
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import Field, SecretStr, ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -51,6 +53,19 @@ DEFAULT_CHAT_TURN_TIMEOUT_SECONDS = 120
 DEFAULT_CHAT_QUESTIONS_PER_MINUTE = 20
 DEFAULT_CHAT_MAX_CONCURRENT_TURNS = 2
 DEFAULT_CHAT_HEARTBEAT_SECONDS = 15
+# /summary reports (ADR 0015).
+DEFAULT_REPORT_TIMEZONE = "Asia/Kolkata"
+DEFAULT_REPORT_CLEANUP_TIME = "02:00"
+DEFAULT_REPORT_RETENTION_DAYS = 7
+DEFAULT_REPORT_BUILD_TIMEOUT_SECONDS = 1800  # many-model reports (ADR 0015 amendment 1)
+DEFAULT_REPORT_MODEL_CONCURRENCY = 4
+DEFAULT_REPORT_TREND_DAYS = 30
+DEFAULT_REPORT_INACTIVE_LOOKBACK_DAYS = 7
+DEFAULT_REPORT_MAX_KPIS = 6
+DEFAULT_REPORT_MAX_DRIVERS = 3
+DEFAULT_REPORT_MAX_FOCUS = 2
+DEFAULT_REPORT_MAX_SUGGESTIONS = 6
+DEFAULT_REPORT_DOWNLOAD_LINK_SECONDS = 60
 _MAX_HOURS_OR_MINUTES = 1_000_000  # guards against overflow from absurd values
 _FALLBACKS = {
     "conversation_retention_hours": DEFAULT_CONVERSATION_RETENTION_HOURS,
@@ -86,6 +101,16 @@ _FALLBACKS = {
     "chat_questions_per_minute": DEFAULT_CHAT_QUESTIONS_PER_MINUTE,
     "chat_max_concurrent_turns": DEFAULT_CHAT_MAX_CONCURRENT_TURNS,
     "chat_heartbeat_seconds": DEFAULT_CHAT_HEARTBEAT_SECONDS,
+    "report_retention_days": DEFAULT_REPORT_RETENTION_DAYS,
+    "report_build_timeout_seconds": DEFAULT_REPORT_BUILD_TIMEOUT_SECONDS,
+    "report_model_concurrency": DEFAULT_REPORT_MODEL_CONCURRENCY,
+    "report_max_kpis": DEFAULT_REPORT_MAX_KPIS,
+    "report_max_drivers": DEFAULT_REPORT_MAX_DRIVERS,
+    "report_max_focus": DEFAULT_REPORT_MAX_FOCUS,
+    "report_max_suggestions": DEFAULT_REPORT_MAX_SUGGESTIONS,
+    "report_download_link_seconds": DEFAULT_REPORT_DOWNLOAD_LINK_SECONDS,
+    "report_trend_days": DEFAULT_REPORT_TREND_DAYS,
+    "report_inactive_lookback_days": DEFAULT_REPORT_INACTIVE_LOOKBACK_DAYS,
 }
 
 # Power BI client applications that request tokens for custom visuals (commercial cloud).
@@ -194,6 +219,16 @@ class Settings(BaseSettings):
         "chat_questions_per_minute",
         "chat_max_concurrent_turns",
         "chat_heartbeat_seconds",
+        "report_retention_days",
+        "report_build_timeout_seconds",
+        "report_model_concurrency",
+        "report_max_kpis",
+        "report_max_drivers",
+        "report_max_focus",
+        "report_max_suggestions",
+        "report_download_link_seconds",
+        "report_trend_days",
+        "report_inactive_lookback_days",
         mode="before",
     )
     @classmethod
@@ -303,6 +338,75 @@ class Settings(BaseSettings):
     chat_questions_per_minute: int = DEFAULT_CHAT_QUESTIONS_PER_MINUTE
     chat_max_concurrent_turns: int = DEFAULT_CHAT_MAX_CONCURRENT_TURNS
     chat_heartbeat_seconds: int = DEFAULT_CHAT_HEARTBEAT_SECONDS
+
+    # --- /summary reports (ADR 0015). Missing/invalid values fall back to the defaults. ---
+    reports_enabled: bool = True
+    # Report files (report.json + report.pdf per report); in Docker, the `reports` volume.
+    report_storage_dir: str = "data/reports"
+    # The report "day", the cleanup time and the times shown in reports.
+    report_timezone: str = DEFAULT_REPORT_TIMEZONE
+    # Reports are deleted this many days (x 24 h) after they were built.
+    report_retention_days: int = DEFAULT_REPORT_RETENTION_DAYS
+    # Built-in daily deletion job; also runnable as `python -m app.jobs.report_cleanup`.
+    report_cleanup_scheduler_enabled: bool = True
+    report_cleanup_time: str = DEFAULT_REPORT_CLEANUP_TIME  # HH:MM in REPORT_TIMEZONE
+    report_build_timeout_seconds: int = DEFAULT_REPORT_BUILD_TIMEOUT_SECONDS
+    report_model_concurrency: int = DEFAULT_REPORT_MODEL_CONCURRENCY
+    report_max_kpis: int = DEFAULT_REPORT_MAX_KPIS
+    report_max_drivers: int = DEFAULT_REPORT_MAX_DRIVERS
+    report_max_focus: int = DEFAULT_REPORT_MAX_FOCUS
+    report_max_suggestions: int = DEFAULT_REPORT_MAX_SUGGESTIONS
+    report_company_name: str = "Discover Chat Bot"
+    report_logo_path: str | None = None
+    report_download_link_seconds: int = DEFAULT_REPORT_DOWNLOAD_LINK_SECONDS
+    # Days in each section's trend chart, and the window for "no activity now" alerts.
+    report_trend_days: int = DEFAULT_REPORT_TREND_DAYS
+    report_inactive_lookback_days: int = DEFAULT_REPORT_INACTIVE_LOOKBACK_DAYS
+
+    @field_validator("report_timezone", mode="before")
+    @classmethod
+    def _timezone_or_default(cls, value: object) -> str:
+        name = str(value or "").strip()
+        try:
+            ZoneInfo(name)
+        except (ValueError, ZoneInfoNotFoundError):
+            if name:
+                logger.warning(
+                    "REPORT_TIMEZONE=%r is not a known time zone; using fallback %s",
+                    value,
+                    DEFAULT_REPORT_TIMEZONE,
+                )
+            return DEFAULT_REPORT_TIMEZONE
+        return name
+
+    @field_validator("report_cleanup_time", mode="before")
+    @classmethod
+    def _clock_time_or_default(cls, value: object) -> str:
+        try:
+            hours, minutes = (int(part) for part in str(value).strip().split(":"))
+            return time(hours, minutes).strftime("%H:%M")
+        except (TypeError, ValueError):
+            if value not in (None, ""):
+                logger.warning(
+                    "REPORT_CLEANUP_TIME=%r is not HH:MM; using fallback %s",
+                    value,
+                    DEFAULT_REPORT_CLEANUP_TIME,
+                )
+            return DEFAULT_REPORT_CLEANUP_TIME
+
+    @field_validator("report_logo_path", mode="before")
+    @classmethod
+    def _optional_path(cls, value: object) -> object:
+        return None if isinstance(value, str) and not value.strip() else value
+
+    @property
+    def report_zone(self) -> ZoneInfo:
+        return ZoneInfo(self.report_timezone)
+
+    @property
+    def report_cleanup_clock(self) -> time:
+        hours, minutes = (int(part) for part in self.report_cleanup_time.split(":"))
+        return time(hours, minutes)
 
     @field_validator("powerbi_max_retries", "llm_max_retries", "agent_max_repairs", mode="before")
     @classmethod

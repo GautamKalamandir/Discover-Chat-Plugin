@@ -7,7 +7,7 @@ Raw query result rows are never stored.
 """
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -15,7 +15,9 @@ from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     BigInteger,
     Boolean,
+    CheckConstraint,
     Computed,
+    Date,
     DateTime,
     Enum,
     ForeignKey,
@@ -84,6 +86,12 @@ class QueryStatus(StrEnum):
     FAILED = "failed"
     DENIED = "denied"
     REJECTED = "rejected"  # failed validation before reaching Power BI
+
+
+class ReportStatus(StrEnum):
+    BUILDING = "building"
+    READY = "ready"
+    FAILED = "failed"
 
 
 class AuditOutcome(StrEnum):
@@ -366,13 +374,22 @@ class ChatMessage(Base):
 
 
 class QueryExecution(Base):
-    """One Power BI query. Stores DAX and result *metadata* only — never result rows (ADR 0004)."""
+    """One Power BI query. Stores DAX and result *metadata* only — never result rows (ADR 0004).
+
+    Belongs to a chat session or to a /summary report (ADR 0015), never both; it is deleted with
+    its owner."""
 
     __tablename__ = "query_executions"
+    __table_args__ = (
+        CheckConstraint("(session_id IS NULL) <> (report_id IS NULL)", name="one_owner"),
+    )
 
     id: Mapped[uuid.UUID] = _uuid_pk()
-    session_id: Mapped[uuid.UUID] = mapped_column(
+    session_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("chat_sessions.id", ondelete="CASCADE"), index=True
+    )
+    report_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("summary_reports.id", ondelete="CASCADE"), index=True
     )
     message_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("chat_messages.id", ondelete="SET NULL")
@@ -388,6 +405,58 @@ class QueryExecution(Base):
     truncated: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     duration_ms: Mapped[int | None] = mapped_column(Integer)
     error_code: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = _created_at()
+
+
+# --- /summary reports (REPORT_RETENTION_DAYS, ADR 0015) ---------------------------------------
+
+
+class SummaryReport(Base):
+    """One /summary build. The report itself lives in files (`json_path`, `pdf_path`, relative to
+    REPORT_STORAGE_DIR); this row holds what the history list needs. Never raw result rows."""
+
+    __tablename__ = "summary_reports"
+    __table_args__ = (
+        Index("ix_summary_reports_user_created", "user_id", "created_at"),
+        # One build at a time per user, across backend instances.
+        Index(
+            "uq_summary_reports_one_building",
+            "user_id",
+            unique=True,
+            postgresql_where=text("status = 'building'"),
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    status: Mapped[ReportStatus] = mapped_column(_enum(ReportStatus, "report_status"))
+    # Calendar day in REPORT_TIMEZONE when the build started (same-day reuse).
+    report_date: Mapped[date] = mapped_column(Date)
+    # [{dataset_id, name, data_date, refreshed_at, status}]
+    models: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, server_default=text("'[]'"))
+    headline: Mapped[str | None] = mapped_column(String(300))
+    suggestion_counts: Mapped[dict[str, int] | None] = mapped_column(JSONB)
+    json_path: Mapped[str | None] = mapped_column(String(512))
+    pdf_path: Mapped[str | None] = mapped_column(String(512))
+    error_code: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), index=True
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ReportDownloadToken(Base):
+    """One-time PDF link (ADR 0015 §9). Only the SHA-256 of the token is stored."""
+
+    __tablename__ = "report_download_tokens"
+
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    report_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("summary_reports.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = _created_at()
 
 

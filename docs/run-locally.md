@@ -67,3 +67,21 @@ docker exec discover-chatbot-backend-1 python -m app.jobs.registry add --dataset
 ```
 
 Phase 2 capture bundles are written to `backend/spikes/captures/` on the host.
+
+## `/summary` reports (Phase 15)
+
+- **Where reports go:** report files are written to `REPORT_STORAGE_DIR` inside the backend container, which is
+  backed by the `reports` Docker volume. `docker compose … down` keeps them; `down -v` deletes them, and the database
+  with them.
+- **When they are deleted:** daily at `REPORT_CLEANUP_TIME` (02:00, `REPORT_TIMEZONE`) and at startup, for reports
+  older than `REPORT_RETENTION_DAYS`. To run the deletion by hand:
+  ```bash
+  docker exec discover-chatbot-backend-1 python -m app.jobs.report_cleanup
+  ```
+- **Viewing reports:** in Adminer they are in the `summary_reports` table.
+- **Pinning KPIs:** a pinned measure is always in that model's report (for users who can see it):
+  ```bash
+  docker exec discover-chatbot-backend-1 python -m app.jobs.registry kpi add --dataset-id <id> \
+      --measure "Sales[Total Net Sales]" --label "Net sales"
+  docker exec discover-chatbot-backend-1 python -m app.jobs.registry kpi list --dataset-id <id>
+  ```

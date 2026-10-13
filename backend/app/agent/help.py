@@ -107,7 +107,8 @@ def help_reply(
         f"{calendar.month_name[fiscal_start_month]})\n"
         "- break numbers down and rank them (by store, category, month, top 5 …)\n"
         "- compare periods or data sources, and show where a change came from\n"
-        '- follow up on my last answer ("and last year?", "only GOLD")'
+        '- follow up on my last answer ("and last year?", "only GOLD")\n'
+        "- give you a daily report with suggestions, as a PDF too: type **/summary**"
     )
     if topic == "greeting":
         return f"Hi {_first_name(user_name)}! {capabilities}\n\n{sources}{try_these}"

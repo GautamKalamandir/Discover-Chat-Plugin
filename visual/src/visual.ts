@@ -16,6 +16,7 @@ import {
 import { config } from "./config";
 import { reportFilters } from "./context/reportFilters";
 import { dataViewSummary, filterSummary } from "./diagnostics/report";
+import { DownloadOutcome, downloadReport } from "./reports/download";
 import { VisualFormattingSettingsModel } from "./settings";
 import { VisualConversationStore } from "./storage";
 import { App, Theme } from "./ui/App";
@@ -91,6 +92,7 @@ export class Visual implements IVisual {
           title: String(this.formattingSettings.appearance.title.value ?? ""),
           theme: this.theme(),
           onModels: this.onModels,
+          download: this.download,
         }),
       );
       this.host.eventService.renderingFinished(options);
@@ -120,6 +122,22 @@ export class Visual implements IVisual {
     // dropdown is rebuilt (getFormattingModel runs again). Only on change: no update loop.
     if (changed) this.host.refreshHostData?.();
   };
+
+  /** Download PDF for a /summary report (ADR 0015): Power BI's download API, else a one-time
+   * link opened in the browser. */
+  private readonly download = (
+    reportId: string,
+    reportDate: string,
+  ): Promise<DownloadOutcome> =>
+    downloadReport(
+      this.client,
+      {
+        downloadService: this.host.downloadService,
+        launchUrl: (url) => this.host.launchUrl(url),
+      },
+      reportId,
+      reportDate,
+    );
 
   /** Phase 2 (S5): what Power BI gives the visual, as structure and counts only. */
   private diagnostics(

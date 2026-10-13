@@ -22,8 +22,8 @@ COPY app ./app
 COPY dev-fixtures ./dev-fixtures
 
 RUN useradd --create-home --uid 10001 app \
-    && mkdir -p /cache/embeddings /app/spikes/captures \
-    && chown -R app /cache /app/spikes
+    && mkdir -p /cache/embeddings /app/spikes/captures /data/reports \
+    && chown -R app /cache /app/spikes /data
 USER app
 
 EXPOSE 8000

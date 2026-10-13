@@ -9,7 +9,16 @@ from app.db.models import AuditEvent, AuditOutcome
 # Keys allowed in `details`. Audit rows must never carry question text, answers or data values
 # (ADR 0004), so free-form details are restricted to this allow-list.
 ALLOWED_DETAIL_KEYS = frozenset(
-    {"tool", "gateway", "status_code", "error_code", "model_ids", "denied_model_ids", "count"}
+    {
+        "tool",
+        "gateway",
+        "status_code",
+        "error_code",
+        "model_ids",
+        "denied_model_ids",
+        "count",
+        "report_id",  # /summary reports (ADR 0015): an id, never report content
+    }
 )
 
 
