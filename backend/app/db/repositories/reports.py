@@ -10,9 +10,9 @@ import secrets
 import uuid
 from collections.abc import Sequence
 from datetime import date, datetime, timedelta
-from typing import Any
+from typing import Any, cast
 
-from sqlalchemy import func, select, update
+from sqlalchemy import CursorResult, func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -92,8 +92,9 @@ class ReportRepository:
         suggestion_counts: dict[str, int],
         json_path: str,
         pdf_path: str,
-    ) -> None:
-        await self._session.execute(
+    ) -> bool:
+        """False when the row is no longer building (e.g. the deletion job failed it as lost)."""
+        result = await self._session.execute(
             update(SummaryReport)
             .where(SummaryReport.id == report_id, SummaryReport.status == ReportStatus.BUILDING)
             .values(
@@ -106,6 +107,7 @@ class ReportRepository:
                 completed_at=await self._db_now(),
             )
         )
+        return bool(cast(CursorResult[Any], result).rowcount)
 
     async def mark_failed(
         self, report_id: uuid.UUID, error_code: str, *, models: list[dict[str, Any]] | None = None

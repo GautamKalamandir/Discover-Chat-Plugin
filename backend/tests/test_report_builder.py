@@ -25,7 +25,7 @@ from app.db.repositories.users import UserRepository
 from app.llm.base import ChatMessage, LLMProvider, LLMResponse
 from app.powerbi.base import GatewayCapability, QueryResult
 from app.powerbi.dev_synthetic import LATEST_DATE, PREVIOUS_DATE, DevSyntheticGateway
-from app.powerbi.errors import PowerBITimeoutError
+from app.powerbi.errors import DaxQueryError, PowerBITimeoutError
 from app.powerbi.service import PowerBIService
 from app.reports.builder import (
     DEV_DATA_NOTE,
@@ -453,6 +453,23 @@ async def test_ungrounded_text_falls_back_to_templates(env: Env) -> None:
     assert content.summary == "Sales: figures for 12 Oct 2026."
 
 
+async def test_day_and_month_numbers_are_never_accepted_as_figures(env: Env) -> None:
+    # The trend covers 30 days, so every number from 1 to 31 is a day shown in the report. A
+    # made-up "18.00%" must still be rejected; numbers that are part of a date are fine.
+    def dated(_: str, __: Sequence[ChatMessage]) -> Any:
+        return {
+            "headline": "Figures from 01 to 12 Oct 2026, compared with Oct 5.",
+            "narrative": "Net sales fell 18.00% on 12/10.",
+            "suggestions": [],
+        }
+
+    content, _, _ = await build(env, llm(section=dated), oid="user-b")
+
+    sales = section(content, "Sales")
+    assert sales.headline == "Figures from 01 to 12 Oct 2026, compared with Oct 5."
+    assert sales.narrative is not None and sales.narrative.startswith("- Net sales: ")
+
+
 async def test_the_llm_being_unavailable_still_gives_template_sections(env: Env) -> None:
     def down(_: str, __: Sequence[ChatMessage]) -> Any:
         raise AppError(ErrorCode.LLM_UNAVAILABLE, "down", 503)
@@ -487,6 +504,25 @@ TWO_KPIS = {
         },
     ],
 }
+
+
+async def test_a_failing_report_query_is_not_rewritten_by_the_llm(env: Env) -> None:
+    # The server built this DAX; the LLM repair loop is only for DAX the agent wrote (ADR 0016).
+    class FailingTrend(ReportGateway):
+        async def execute_dax(
+            self, user_token: str, dataset_id: str, dax: str, *, max_rows: int, user_key: str
+        ) -> QueryResult:
+            if '"t|' in dax:
+                raise DaxQueryError("Column 'X' cannot be found")
+            return await super().execute_dax(
+                user_token, dataset_id, dax, max_rows=max_rows, user_key=user_key
+            )
+
+    model = llm()
+    content, _, _ = await build(env, model, FailingTrend(), oid="user-b")
+
+    assert section(content, "Sales").status == "ok" and section(content, "Sales").trend is None
+    assert model.count("repair") == 0
 
 
 async def test_every_section_gets_a_trend_and_top_and_bottom_performers(env: Env) -> None:

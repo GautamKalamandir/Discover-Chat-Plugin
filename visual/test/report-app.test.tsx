@@ -1,11 +1,12 @@
-// /summary in the chat (ADR 0015): progress, the report, Download PDF, Regenerate, previous reports.
+// Reports in the chat (ADR 0015, 0016): progress, the report (schema 2, and schema 3 for /sales-summary),
+// Download PDF, Regenerate, previous reports.
 
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import * as React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ApiClient } from "../src/api/client";
-import { ReportDetail, ReportEvent, ReportItem, SummaryReportContent } from "../src/api/types";
+import { ReportDetail, ReportEvent, ReportItem, SalesReportContent, SummaryReportContent } from "../src/api/types";
 import { SUMMARY_STOPPED } from "../src/chat/store";
 import { ConversationStore } from "../src/storage";
 import { App, AppProps } from "../src/ui/App";
@@ -199,6 +200,14 @@ describe("/summary", () => {
         expect(screen.getAllByText("+200.50 (100%)").length).toBeGreaterThan(0); // Store B's bar
     });
 
+    it("also starts from /sales-summary (ADR 0016), never the chat agent", async () => {
+        const client = await summary({}, " /Sales-Summary ");
+
+        await screen.findByText("Check stock at Store B");
+        expect(client.ask).not.toHaveBeenCalled();
+        expect(client.startSummary).toHaveBeenCalledWith(false);
+    });
+
     it("shows what the build is doing while it runs", async () => {
         let finish: () => void = () => undefined;
         const held = new Promise<void>((resolve) => (finish = resolve));
@@ -309,10 +318,10 @@ describe("/summary", () => {
         expect(client.getReport).not.toHaveBeenCalled();
     });
 
-    it("tells new users about /summary", async () => {
+    it("tells new users about /sales-summary", async () => {
         render(<App client={fakeClient()} conversations={MEMORY} modelId="sales-ds" reportFilters={[]} title="" theme={THEME} />);
 
-        expect(await screen.findByText(/type \/summary for today's report/)).toBeTruthy();
+        expect(await screen.findByText(/type \/sales-summary for today's sales report/)).toBeTruthy();
     });
 });
 
@@ -410,6 +419,195 @@ describe("/summary report view", () => {
         await summary({ client });
 
         expect((await screen.findByRole("status")).textContent).toBe("Querying Sales… (12 of 38 done)");
+        finish();
+        await screen.findByText("Check stock at Store B");
+    });
+});
+
+// --- /sales-summary (schema 3, ADR 0016) -------------------------------------------------------------
+
+const SALES_REPORT: SalesReportContent = {
+    schema_version: 3,
+    kind: "sales",
+    report_id: "r1",
+    generated_at: "2026-10-13T03:05:00Z",
+    timezone: "Asia/Kolkata",
+    user_name: "User A",
+    bullets: [
+        { text: "GOLD fell -20.00% against last year.", tone: "bad", emphasis: ["GOLD", "SILVER"], evidence: ["f1"] },
+        { text: "SILVER rose +25.00%.", tone: "good", emphasis: [], evidence: ["f2"] },
+        { text: "Stock turn was 1.50.", tone: "neutral", emphasis: [], evidence: ["f3"] },
+    ],
+    summary: "GOLD fell -20.00% against last year.",
+    models_used: [{ dataset_id: "sales-ds", name: "Sales", lenses: ["lob_growth", "stock_turn"], reason: "" }],
+    sales_sections: [
+        {
+            dataset_id: "sales-ds",
+            name: "Sales",
+            status: "ok",
+            message: null,
+            data_date: "2026-10-12",
+            refreshed_at: null,
+            tables: [
+                {
+                    lens: "lob_growth",
+                    title: "LOB-wise growth and degrowth",
+                    status: "ok",
+                    message: null,
+                    main: {
+                        title: "t",
+                        columns: ["LOB", "MTD", "MTD vs LY", "Status"],
+                        rows: [
+                            [
+                                { text: "GOLD" },
+                                { text: "12,34,567.89", fact: "f1" },
+                                { text: "-20.00%", tone: "bad", fact: "f1" },
+                                { text: "Degrowth", tone: "bad", fact: "f1" },
+                            ],
+                            [
+                                { text: "<b>SILVER</b>" },
+                                { text: "500" },
+                                { text: "+25.00%", tone: "good" },
+                                { text: "Growth", tone: "good" },
+                            ],
+                        ],
+                        note: null,
+                    },
+                    drilldowns: [
+                        {
+                            title: "Stores behind GOLD's fall",
+                            columns: ["Store", "MTD vs LY"],
+                            rows: [[{ text: "Store B" }, { text: "-50.00%", tone: "bad" }]],
+                        },
+                    ],
+                    findings: "- GOLD fell most at Store B.",
+                    suggestions: [
+                        {
+                            priority: "high",
+                            title: "Move GOLD stock to Store B",
+                            where: "Store B",
+                            owner: "Merchandising",
+                            urgency: "today",
+                            reason: "GOLD fell -20.00%.",
+                            notes: "",
+                            evidence: ["f1"],
+                            model_name: "Sales",
+                        },
+                    ],
+                    cut_short: true,
+                    queries_used: 8,
+                    notes: ["Not found in the data of Stock: GOLD."],
+                },
+                {
+                    lens: "stock_turn",
+                    title: "Stock turn",
+                    status: "failed",
+                    message: "Couldn't load Sales data right now.",
+                    main: null,
+                    drilldowns: [],
+                    findings: "",
+                    suggestions: [],
+                    cut_short: false,
+                    queries_used: 1,
+                    notes: [],
+                },
+            ],
+            trend: null,
+            inactive: [],
+            notes: [],
+        },
+        {
+            dataset_id: "east-ds",
+            name: "Retail East",
+            status: "no_data",
+            message: "No data was found up to today.",
+            data_date: null,
+            refreshed_at: null,
+            tables: [],
+            trend: null,
+            inactive: [],
+            notes: [],
+        },
+    ],
+    actions: [
+        {
+            priority: "high",
+            title: "Move GOLD stock to Store B",
+            where: "Store B",
+            owner: "Merchandising",
+            urgency: "today",
+            reason: "GOLD fell -20.00%.",
+            notes: "",
+            evidence: ["f1"],
+            model_name: "Sales",
+            lens: "lob_growth",
+        },
+    ],
+    notes: ["Development data, not real figures."],
+};
+
+describe("/sales-summary report view", () => {
+    async function sales() {
+        const client = fakeClient({ getReport: vi.fn(async () => ({ ...detail(), content: SALES_REPORT })) });
+        await summary({ client }, "/sales-summary");
+        await screen.findByText("Daily sales MIS summary");
+        return client;
+    }
+
+    it("opens with the MIS summary, each bullet marked and coloured by its news", async () => {
+        await sales();
+
+        const bullets = screen.getAllByRole("listitem").filter((li) => li.className.startsWith("bullet"));
+        const [fell, rose, neutral] = bullets;
+        expect(fell.className).toBe("bullet bad");
+        expect(fell.textContent).toBe("▼ GOLD fell -20.00% against last year.");
+        expect(fell.querySelector("[aria-label='needs attention']")).toBeTruthy();
+        expect(screen.getAllByText("GOLD").some((e) => e.tagName === "STRONG")).toBe(true); // emphasis
+        expect(rose.className).toBe("bullet good");
+        expect(rose.textContent?.startsWith("▲")).toBe(true);
+        expect(neutral.textContent?.startsWith("●")).toBe(true);
+        expect(screen.getByText(/Data sources used: Sales \(LOB-wise growth and degrowth, Stock turn\)/)).toBeTruthy();
+    });
+
+    it("shows each table with its changes coloured, findings, action points and drill-downs", async () => {
+        await sales();
+
+        expect(screen.getByText("LOB-wise growth and degrowth")).toBeTruthy();
+        expect(screen.getByText("-20.00%", { selector: "td" }).className).toBe("num bad");
+        expect(screen.getByText("Growth").className).toBe("num good");
+        expect(screen.getByText("<b>SILVER</b>").tagName).toBe("TD"); // text, never markup
+        expect(screen.getByText("GOLD fell most at Store B.")).toBeTruthy();
+        expect(screen.getByText("How the agent looked into it (1)")).toBeTruthy();
+        expect(screen.getByText("Stores behind GOLD's fall")).toBeTruthy();
+        expect(screen.getByText("Not found in the data of Stock: GOLD.")).toBeTruthy();
+        expect(screen.getByText(/was cut short: its query limit was reached/)).toBeTruthy();
+        expect(screen.getByText("Couldn't load Sales data right now.")).toBeTruthy(); // a failed table
+    });
+
+    it("ends with every action point, naming its data source and table", async () => {
+        await sales();
+
+        expect(screen.getByText("High priority (1)")).toBeTruthy();
+        expect(screen.getByText("(Sales · LOB-wise growth and degrowth)")).toBeTruthy();
+        expect(screen.getAllByText("Where: Store B · Who: Merchandising · By: Today")).toHaveLength(2);
+        expect(screen.getByText("Data sources without figures today (1)")).toBeTruthy();
+        expect(screen.getByText(/No data was found up to today/)).toBeTruthy();
+    });
+
+    it("names the table being worked on while the report builds", async () => {
+        let finish: () => void = () => undefined;
+        const held = new Promise<void>((resolve) => (finish = resolve));
+        const client = fakeClient({
+            reportEvents: vi.fn(async function* (): AsyncGenerator<ReportEvent> {
+                yield { type: "progress", stage: "stock_turn", model_name: "Sales", done: 3, total: 12 };
+                await held;
+                yield { type: "done", status: "ready", report_id: "r1" };
+            }),
+        });
+
+        await summary({ client }, "/sales-summary");
+
+        expect((await screen.findByRole("status")).textContent).toBe("Stock turn: Sales… (3 of 12 done)");
         finish();
         await screen.findByText("Check stock at Store B");
     });

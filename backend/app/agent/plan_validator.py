@@ -56,7 +56,7 @@ async def validate_plan(
         if schema is None:
             problems.append(f"model {step.model_id} was not in the provided context")
             continue
-        fixed, step_problems = _check_step(step, schema)
+        fixed, step_problems = check_step(step, schema)
         problems += step_problems
         steps.append(fixed)
     if problems:
@@ -111,6 +111,12 @@ async def _validate_change(
     return ValidatedPlan(plan.model_copy(update={"change": fixed, "steps": []}), authz)
 
 
+def has_column(ref: str, schema: NormalizedSchema) -> bool:
+    """A Table[Column] the user can see (OLS applied)."""
+    parsed = parse_ref(ref)
+    return parsed is not None and object_key("column", *parsed) in schema.visible_keys
+
+
 def is_date_column(ref: str, schema: NormalizedSchema) -> bool:
     parsed = parse_ref(ref)
     if parsed is None:
@@ -125,7 +131,7 @@ def is_date_column(ref: str, schema: NormalizedSchema) -> bool:
     )
 
 
-def _check_step(step: PlanStep, schema: NormalizedSchema) -> tuple[PlanStep, list[str]]:
+def check_step(step: PlanStep, schema: NormalizedSchema) -> tuple[PlanStep, list[str]]:
     problems: list[str] = []
     visible = schema.visible_keys
 

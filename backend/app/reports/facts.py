@@ -6,6 +6,7 @@ the rows later in a day.
 """
 
 import math
+import re
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from typing import Any
@@ -321,9 +322,25 @@ def numbers_in(node: Any) -> list[float]:
     return []
 
 
-def date_numbers(*days: date | None) -> list[float]:
-    """Day and month numbers of the dates shown, so "12 Oct" or "11/10" aren't flagged."""
-    return [float(n) for d in days if d is not None for n in (d.day, d.month, d.year)]
+_MONTH = (
+    r"(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?"
+    r"|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b"
+)
+# Dates as the report and the agent write them: "12 Oct", "01 to 12 Oct 2026", "12-15 Oct",
+# "Oct 12, 2026", "12/10/2026". Only numbers written as part of a date are taken out, so a day or
+# month number is never accepted as a figure elsewhere in the text.
+_DAY_RANGE = r"\d{1,2}(?:\s*(?:to|-|and)\s*\d{1,2})?"
+_DATES = re.compile(
+    rf"\b{_DAY_RANGE}\s+{_MONTH}(?:\s+\d{{4}})?"
+    rf"|\b{_MONTH}\s+{_DAY_RANGE}\b(?:,?\s+\d{{4}})?"
+    r"|\b\d{1,2}/\d{1,2}(?:/\d{2,4})?\b",
+    re.IGNORECASE,
+)
+
+
+def strip_dates(text: str) -> str:
+    """The text with its dates replaced by a space, before its numbers are checked."""
+    return _DATES.sub(" ", text)
 
 
 def _as_date(value: Any) -> date | None:

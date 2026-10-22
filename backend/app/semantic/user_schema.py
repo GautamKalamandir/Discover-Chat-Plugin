@@ -4,6 +4,7 @@ This is what retrieval intersects against (scenario 16), and fetching it is also
 on-use metadata sync (Q10b).
 """
 
+import asyncio
 import logging
 import time
 from collections.abc import Callable
@@ -33,19 +34,35 @@ class UserSchemaService:
         self._ttl = settings.user_schema_cache_minutes * 60
         self._clock = clock
         self._cache: dict[tuple[str, str], tuple[float, NormalizedSchema]] = {}
+        self._in_flight: dict[tuple[str, str], asyncio.Future[NormalizedSchema | None]] = {}
 
     async def visible(self, authz: AuthorizedContext, dataset_id: str) -> NormalizedSchema | None:
-        """The user's schema, or None when it can't be obtained (callers must fail closed)."""
+        """The user's schema, or None when it can't be obtained (callers must fail closed).
+
+        Concurrent calls for the same user and model share one fetch (chat routing, retrieval and
+        report builds often ask at the same moment)."""
         key = (authz.request.user.key, dataset_id)
         cached = self._cache.get(key)
-        now = self._clock()
-        if cached and cached[0] > now:
+        if cached and cached[0] > self._clock():
             return cached[1]
+        task = self._in_flight.get(key)
+        if task is None:
+            task = asyncio.ensure_future(self._fetch(authz, dataset_id, key))
+            self._in_flight[key] = task
+            task.add_done_callback(lambda _: self._in_flight.pop(key, None))
+        # Shielded: one caller giving up doesn't cancel the fetch the others wait for.
+        return await asyncio.shield(task)
+
+    async def _fetch(
+        self, authz: AuthorizedContext, dataset_id: str, key: tuple[str, str]
+    ) -> NormalizedSchema | None:
         try:
             schema = normalize(await self._source.fetch(authz, dataset_id))
         except Exception as exc:
-            logger.warning("User schema unavailable for %s: %s", dataset_id, exc)
+            # The type only: Power BI messages can carry data (Q18).
+            logger.warning("User schema unavailable for %s: %s", dataset_id, type(exc).__name__)
             return None
+        now = self._clock()
         if len(self._cache) >= MAX_ENTRIES:
             self._cache = {k: v for k, v in self._cache.items() if v[0] > now}
         self._cache[key] = (now + self._ttl, schema)

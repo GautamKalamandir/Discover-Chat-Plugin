@@ -28,5 +28,6 @@ USER app
 
 EXPOSE 8000
 
-# Migrate, then serve over HTTPS (Power BI only calls https:// backends).
-CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8000 --ssl-certfile /certs/localhost.crt --ssl-keyfile /certs/localhost.key"]
+# Wait for the database (Docker Desktop starts all containers at once), migrate, then serve over
+# HTTPS (Power BI only calls https:// backends).
+CMD ["sh", "-c", "python -m app.jobs.wait_for_db && alembic upgrade head && exec uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8000 --ssl-certfile /certs/localhost.crt --ssl-keyfile /certs/localhost.key"]

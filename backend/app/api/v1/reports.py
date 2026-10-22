@@ -9,7 +9,9 @@
   opens in a browser tab when Power BI blocks downloads from visuals.
 """
 
+import asyncio
 import itertools
+import logging
 import uuid
 from collections.abc import AsyncIterator
 from datetime import date, datetime
@@ -30,11 +32,16 @@ from app.db.repositories.reports import report_not_found
 from app.db.repositories.users import UserRepository
 from app.reports.manager import ReportBuildManager, failure_message
 from app.reports.models import SummaryReportContent
-from app.reports.store import ReportStore
+from app.reports.sales.content import SalesReportContent, parse_report
+from app.reports.store import ReportStore, ReportStoreError
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
 MAX_TOKEN_CHARS = 128
+# How often /events re-reads a build that runs on another backend instance.
+EVENTS_POLL_SECONDS = 3.0
 
 
 class SummaryRequest(BaseModel):
@@ -64,7 +71,8 @@ class ReportList(BaseModel):
 
 
 class ReportDetail(ReportItem):
-    content: SummaryReportContent | None = None
+    # Schema 3 (/sales-summary, ADR 0016), or schema 2 for reports built before it.
+    content: SalesReportContent | SummaryReportContent | None = None
 
 
 class DownloadLink(BaseModel):
@@ -98,6 +106,16 @@ async def _owned(
         if user is None:
             raise report_not_found()
         return await _manager(request).repository(session).get_owned(report_id, user)
+
+
+async def _read(request: Request, report: SummaryReport, path: str) -> bytes:
+    """A report file. A file that is gone (deleted, lost with a volume) is the same 404 as a missing
+    report, never a server error."""
+    try:
+        return await _store(request).read(path)
+    except (FileNotFoundError, ReportStoreError):
+        logger.warning("File of report %s is missing", report.id)
+        raise report_not_found() from None
 
 
 def _item(report: SummaryReport) -> dict[str, Any]:
@@ -171,7 +189,7 @@ async def download_with_link(token: str, request: Request) -> Response:
         report = await _manager(request).repository(session).consume_download_token(token)
     if report.pdf_path is None:  # pragma: no cover - ready reports always have a PDF
         raise report_not_found()
-    pdf = await _store(request).read(report.pdf_path)
+    pdf = await _read(request, report, report.pdf_path)
     await _audit_download(request, report, "link", None)
     return _pdf_response(report, pdf)
 
@@ -181,8 +199,8 @@ async def get_report(report_id: uuid.UUID, request: Request, ctx: CurrentContext
     report = await _owned(request, ctx.user, report_id)
     content = None
     if report.status is ReportStatus.READY and report.json_path:
-        raw = await _store(request).read(report.json_path)
-        content = SummaryReportContent.model_validate_json(raw)
+        raw = await _read(request, report, report.json_path)
+        content = parse_report(raw)
     return ReportDetail(**_item(report), content=content)
 
 
@@ -193,6 +211,7 @@ async def report_events(
     """Build progress as Server-Sent Events: progress, model_done, error, done."""
     report = await _owned(request, ctx.user, report_id)
     events = _manager(request).follow(report.id)
+    build_seconds = _settings(request).report_build_timeout_seconds + 60
 
     async def stream() -> AsyncIterator[ServerSentEvent]:
         seq = itertools.count(1)
@@ -201,11 +220,21 @@ async def report_events(
                 data = dict(event)
                 yield encode(str(data.pop("type")), data, next(seq))
             return
-        # Not running here: finished already, or building on another backend instance.
-        if report.status is ReportStatus.FAILED:
-            message = failure_message(report.error_code)
-            yield encode("error", {"code": report.error_code, "message": message}, next(seq))
-        yield encode("done", {"status": report.status.value, "report_id": report.id}, next(seq))
+        # Not running here: it has just finished, or it runs on another backend instance. The row is
+        # re-read (the status read above may predate the end of the build) until it settles.
+        current = report
+        deadline = asyncio.get_running_loop().time() + build_seconds
+        while True:
+            current = await _owned(request, ctx.user, report_id)
+            if current.status is not ReportStatus.BUILDING:
+                break
+            if asyncio.get_running_loop().time() >= deadline:
+                break
+            await asyncio.sleep(EVENTS_POLL_SECONDS)
+        if current.status is ReportStatus.FAILED:
+            message = failure_message(current.error_code)
+            yield encode("error", {"code": current.error_code, "message": message}, next(seq))
+        yield encode("done", {"status": current.status.value, "report_id": current.id}, next(seq))
 
     return EventSourceResponse(
         stream(),
@@ -220,7 +249,7 @@ async def get_pdf(report_id: uuid.UUID, request: Request, ctx: CurrentContext) -
     report = await _owned(request, ctx.user, report_id)
     if report.status is not ReportStatus.READY or report.pdf_path is None:
         raise report_not_found()
-    pdf = await _store(request).read(report.pdf_path)
+    pdf = await _read(request, report, report.pdf_path)
     await _audit_download(request, report, "pdf", ctx.user)
     return _pdf_response(report, pdf)
 

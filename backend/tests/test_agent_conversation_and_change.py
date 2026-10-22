@@ -97,6 +97,18 @@ def test_help_lists_only_the_users_models_and_handles_none() -> None:
     assert greeting == f"Hi Fena! {NO_SOURCES}"
 
 
+def test_help_tells_users_about_the_daily_sales_report() -> None:
+    reply = help_reply(
+        "capabilities",
+        user_name="Fena Patel",
+        models=[model("sales-ds", "KMJL Sales New")],
+        schema=None,
+        fiscal_start_month=4,
+    )
+
+    assert "type **/sales-summary**" in reply  # ADR 0016
+
+
 # --- periods ------------------------------------------------------------------------------------
 
 

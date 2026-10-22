@@ -216,6 +216,26 @@ built first.
 | R19 | A user with many data sources | The "At a glance" table lists every model; progress shows "(n of N)"; the build finishes within 30 minutes | |
 | R20 | Targets | A target measure is never the main KPI; achievement % shows where a target exists | |
 
+## 13b. `/sales-summary` MIS sales report (Phase 16, ADR 0016)
+
+Setup: a user with at least two sales models and, for S5, a stock model. Each check needs the matching sub-phase
+(16a–16e) to be built first. Rows R1–R12 above still apply to downloads, history and deletion.
+
+| ID | Do | Expected | ✅/❌ |
+|---|---|---|---|
+| S1 | Type `/sales-summary`, then `/summary` | Both start the same sales report; progress names the table and model, e.g. "Stock turn: Sales (3 of 12)" | |
+| S2 | Look at "Models used" | Only sales models are listed, each with the tables it filled; HR or finance models are not queried | |
+| S3 | Summary bullets | Bad news in red with ▼, good news in green with ▲; every figure appears in a table below | |
+| S4 | LOB table | LOBs with value (and weight / quantity when the model has them) for MTD and FYTD against last year; check one LOB against Power BI | |
+| S5 | A degrowing LOB | Its finding names the sub-categories and stores behind the drop and the stock position from the stock model; unmatched names are listed as "not matched in stock data" | |
+| S6 | Sub-category table | Losses by store and by month against last year, with suggestions | |
+| S7 | Stock turn table | The model's own stock turn, or a figure marked "computed from sales and average stock" | |
+| S8 | Price range table | The model's own bands (or agent bands marked as such), with sales against last year and the bands not selling | |
+| S9 | Two models with overlapping data | Each has its own tables; no figure is a sum across models | |
+| S10 | Set `SALES_REPORT_QUERIES_PER_TABLE=2`, regenerate | Tables still show their seed results, marked "analysis cut short" | |
+| S11 | User with **object-level security** hiding a column | That column never appears in any table or text | |
+| S12 | Download PDF | Bullets, four tables per model, trend, "no activity now" and the action list; colours match the chat | |
+
 ## 14. Other users (InPrivate window per user)
 
 | ID | Who | Expected | ✅/❌ |

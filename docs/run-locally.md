@@ -85,3 +85,13 @@ Phase 2 capture bundles are written to `backend/spikes/captures/` on the host.
       --measure "Sales[Total Net Sales]" --label "Net sales"
   docker exec discover-chatbot-backend-1 python -m app.jobs.registry kpi list --dataset-id <id>
   ```
+- **Choosing the `/sales-summary` tables of a model** (ADR 0016): the agent decides which of the four tables
+  (`lob_growth`, `subcategory_loss`, `stock_turn`, `price_range`) each model fills. To correct it, pin a table on
+  (or `--off`), and `clear` to leave it to the agent again:
+  ```bash
+  docker exec discover-chatbot-backend-1 python -m app.jobs.registry lens set --dataset-id <id> --lens stock_turn
+  docker exec discover-chatbot-backend-1 python -m app.jobs.registry lens set --dataset-id <id> --lens price_range --off
+  docker exec discover-chatbot-backend-1 python -m app.jobs.registry lens list --dataset-id <id>
+  ```
+  This needs migration 0005: rebuild the backend image (`docker compose -f infra/docker-compose.yml up -d --build
+  backend`); the container runs the migrations at start.

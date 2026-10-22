@@ -910,6 +910,45 @@ of [docs/e2e-checklist.md](docs/e2e-checklist.md). Needs the backend image rebui
 **IT dependency:** the admin switch "Allow downloads from custom visuals" ([docs/entra-setup.md](docs/entra-setup.md)
 §3). Until it is on, the one-time link is used.
 
+### Phase 16 — `/sales-summary`: an MIS sales report built by an investigating agent 📝 PLANNED 2026-10-15
+**Goal:** replace the generic `/summary` with a sales report that MIS executives can read at first sight:
+- summary bullets in red and green;
+- four tables, each with findings and suggestions: LOB growth and degrowth (with the root cause of degrowth),
+  sub-category loss by store and month, stock turn, and sales by price range;
+- one prioritised action list.
+
+Decisions D1–D12: [ADR 0016](docs/adr/0016-sales-summary.md). Design:
+[docs/design/phase-16-sales-summary.md](docs/design/phase-16-sales-summary.md).
+
+**How it works:**
+- The agent finds the user's sales models and the tables each one can fill. An admin can pin or exclude a model
+  with a CLI.
+- For each model and table, the agent then **investigates in a loop**: query → read the result → choose the next
+  unit, filter or drill-down. Each query is a structured step that the server validates and turns into DAX, within a
+  query budget per table.
+- Periods: latest day, MTD and FYTD, each against last year.
+- Figures are never added across models.
+- The server sets every red/green colour from the facts, and checks every number.
+
+**Reused from Phase 15:** build manager, progress stream, storage, PDF download, history, 7-day deletion, and the
+no-re-check exception.
+
+Each sub-phase is implemented only after its own approval:
+
+| Step | Content | Status |
+|---|---|---|
+| 16.0 | ADR 0016, design note, ADR 0015 marked partly superseded, checklist rows S1–S12 | ✅ DONE 2026-10-15 |
+| 16a | Settings (`SALES_REPORT_QUERIES_PER_TABLE`, `SALES_REPORT_ROOT_CAUSE_LOBS`, `SALES_REPORT_QUERY_CONCURRENCY`); migration 0005 (`semantic_models.report_lenses`) and `registry lens` CLI; discovery (batched LLM plus pins); `/summary` alias; carry-over fixes from the Phase 15 review (grounding gap; a missing report file returns 404; `/events` race; `mark_ready` row count; cached query embeddings; merged schema fetches); tests | ✅ DONE 2026-10-15: backend 698 tests pass (23 new); ruff, mypy, `alembic check` clean; migration 0005 round-trip verified; visual 79 tests pass (1 new), tsc, eslint clean. Discovery isn't wired into a build yet (16c). The visual accepts `/sales-summary` as well as `/summary`; its texts still say `/summary` until 16e |
+| 16b | Loop engine: `LensStep`, `check_step` reuse, DAX compiler (periods, LY, FY months, price bands), facts, `InvestigationLoop` with budget and build-wide query semaphore, `run_step(repair=False)`, dev-gateway support; tests | ✅ DONE 2026-10-15: backend 737 tests pass (39 new); ruff, mypy clean. The `/summary` builder also stops repairing its own DAX now. Lens goals are short placeholders until 16c's prompts; the loop isn't wired into a build yet (16c) |
+| 16c | The four lenses: seed steps, sales persona with research principles, one prompt per lens, cross-model stock check, table builders, findings and suggestions with grounding; tests | ✅ DONE 2026-10-15: backend 759 tests pass (22 new); ruff, mypy clean. `SalesReportBuilder.build_sections` runs the whole analysis; turning it into report.json, the PDF and the build manager is 16d. Each table fails on its own; added period `month_ends_fy` for the derived stock turn |
+| 16d | Summary bullets (colour by the server) and action list, `report.json` schema 3, `render_sales_pdf`; tests | ✅ DONE 2026-10-15: backend 771 tests pass (12 new); ruff, mypy clean; layout checked on a rendered sample. The build manager now builds `/sales-summary` reports (schema 3); stored schema-2 reports still open. The visual shows schema 3 only after 16e. The old `ReportBuilder` is no longer used by the app (its removal is a later clean-up) |
+| 16e | Visual: `/sales-summary` (+ `/summary`), progress per lens, schema-3 report view (schema 2 still shown), help text; tests | ✅ DONE 2026-10-15: visual 83 tests pass (4 new), tsc, eslint clean, `pbiviz package` builds; backend help text and its test. Shared report parts moved to `ReportParts.tsx`; the schema-2 at-a-glance fallback fixed (review finding) |
+| 16f | Live check with the real LLM and Power BI ([checklist](docs/e2e-checklist.md) S1–S12); tune default budgets from measured query counts | ⏳ next: needs the backend image rebuilt and the visual reloaded |
+
+**Load to watch:** 10 sales models × 4 tables × 8 queries ≈ 320 Power BI queries per report, while Power BI allows
+about 120 a minute per user. A build-wide query semaphore and the existing throttling retry spread the load. The
+budgets are tuned in 16f.
+
 ---
 
 ## 10. API surface

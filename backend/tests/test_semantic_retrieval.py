@@ -236,3 +236,31 @@ async def test_documents_not_seen_for_stale_days_are_purged(env: Env) -> None:
     assert result.semantic_documents == 1
     authz = await authz_for(env.sm, "user-a", ["sales-ds"])
     assert "Product[Category]" not in titles(await env.retriever.search(authz, "category", k=50))
+
+
+class CountingEmbedder(HashEmbedder):
+    def __init__(self) -> None:
+        super().__init__()
+        self.queries: list[str] = []
+
+    async def embed_query(self, text: str) -> list[float]:
+        self.queries.append(text)
+        return await super().embed_query(text)
+
+
+async def test_a_repeated_query_is_embedded_once(
+    committed_sessionmaker: async_sessionmaker[AsyncSession],
+) -> None:
+    # A /summary build searches with the same query for every model (one embedding, not 40).
+    await seed_registry(committed_sessionmaker)
+    embedder = CountingEmbedder()
+    e = make_env(committed_sessionmaker, embedder)
+    await e.sync.sync_payload("sales-ds", fixture("sales-ds"))
+    authz = await authz_for(e.sm, "user-a", ["sales-ds"])
+
+    first = await e.retriever.search(authz, "net sales by line of business")
+    again = await e.retriever.search(authz, "net sales by line of business")
+    await e.retriever.search(authz, "credit limit")
+
+    assert titles(first) == titles(again)
+    assert embedder.queries == ["net sales by line of business", "credit limit"]

@@ -17,7 +17,20 @@ from app.powerbi.base import GatewayCapability, GatewayPayload, PowerBIGateway, 
 
 _STRING = re.compile(r'"((?:[^"]|"")*)"')
 _COLUMN = re.compile(r"'((?:[^']|'')+)'\[((?:[^\]]|\]\])+)\]")
-_NESTED = ("TREATAS", "FILTER", "CALCULATETABLE", "KEEPFILTERS", "ALL")
+# Spans whose columns are filters or the inputs of a calculation, never group-by columns.
+_NESTED = (
+    "TREATAS",
+    "FILTER",
+    "CALCULATETABLE",
+    "KEEPFILTERS",
+    "ALL",
+    "DISTINCTCOUNT",
+    "SUM",
+    "AVERAGE",
+    "MIN",
+    "MAX",
+    "COUNT",
+)
 GROUPS = ("DEV-A", "DEV-B", "DEV-C")
 # Column aliases of the /summary latest-day query (app/reports/facts.py).
 LATEST_DATE = "Latest date"

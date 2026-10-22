@@ -40,8 +40,8 @@ from app.llm.factory import create_llm_provider_for_app
 from app.powerbi.base import PowerBIGateway
 from app.powerbi.factory import create_gateways
 from app.powerbi.service import PowerBIService
-from app.reports.builder import ReportBuilder
 from app.reports.manager import ReportBuildManager
+from app.reports.sales.builder import SalesReportBuilder
 from app.reports.store import create_report_store
 from app.retention.scheduler import CleanupScheduler, ReportCleanupScheduler
 from app.semantic.indexer import SemanticIndexer
@@ -99,13 +99,11 @@ def create_app(
     scheduler = (
         CleanupScheduler(sessionmaker, settings) if settings.cleanup_scheduler_enabled else None
     )
-    # /summary reports (ADR 0015): built on request as the user, kept as files on the report
-    # store, deleted by a daily job.
+    # /sales-summary reports (ADR 0015, 0016): built on request as the user, kept as files on
+    # the report store, deleted by a daily job.
     report_store = create_report_store(settings)
     report_manager = ReportBuildManager(
-        ReportBuilder(
-            llm_provider, retriever, user_schemas, powerbi_service, sessionmaker, settings
-        ),
+        SalesReportBuilder(llm_provider, user_schemas, powerbi_service, sessionmaker, settings),
         report_store,
         sessionmaker,
         settings,

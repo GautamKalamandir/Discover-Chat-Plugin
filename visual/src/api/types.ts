@@ -71,7 +71,7 @@ export type StreamEvent =
     | { type: "error"; code: string; message: string }
     | { type: "done"; message_id: string | null; query_ids: string[] };
 
-// --- /summary reports (ADR 0015, docs/design/phase-15-summary-reports.md §4) ---------------------
+// --- reports (ADR 0015 and 0016, docs/design/phase-15-summary-reports.md §4) ---------------------
 
 export type ReportStatus = "building" | "ready" | "failed";
 export type Priority = "high" | "medium" | "low";
@@ -211,6 +211,85 @@ export interface SummaryReportContent {
     overview?: OverviewRow[];
 }
 
+// --- /sales-summary reports: report.json schema 3 (ADR 0016, docs/design/phase-16-sales-summary.md §8) ---
+
+export type Lens = "lob_growth" | "subcategory_loss" | "stock_turn" | "price_range";
+/** Set by the server from the facts behind it: good news, needs attention, or neither. */
+export type Tone = "good" | "bad" | "neutral";
+
+export interface ReportCell {
+    text: string;
+    tone?: Tone | null;
+    fact?: string | null;
+}
+
+export interface ReportTable {
+    title: string;
+    columns: string[];
+    rows: ReportCell[][];
+    note?: string | null;
+}
+
+export interface LensTable {
+    lens: Lens;
+    title: string;
+    status: "ok" | "failed" | "no_data";
+    message: string | null;
+    main: ReportTable | null;
+    drilldowns: ReportTable[];
+    findings: string;
+    suggestions: Suggestion[];
+    cut_short: boolean;
+    queries_used: number;
+    notes: string[];
+}
+
+export interface Bullet {
+    text: string;
+    tone: Tone;
+    emphasis: string[];
+    evidence: string[];
+}
+
+export interface SalesAction extends Suggestion {
+    lens: Lens;
+}
+
+export interface SalesSection {
+    dataset_id: string;
+    name: string;
+    status: "ok" | "failed" | "no_data";
+    message: string | null;
+    data_date: string | null;
+    refreshed_at: string | null;
+    tables: LensTable[];
+    trend: Trend | null;
+    inactive: InactiveBreakdown[];
+    notes: string[];
+}
+
+export interface SalesReportContent {
+    schema_version: number;
+    kind: "sales";
+    report_id: string;
+    generated_at: string;
+    timezone: string;
+    user_name: string | null;
+    bullets: Bullet[];
+    summary: string;
+    models_used: Array<{ dataset_id: string; name: string; lenses: Lens[]; reason: string }>;
+    sales_sections: SalesSection[];
+    actions: SalesAction[];
+    notes: string[];
+}
+
+export type ReportContent = SummaryReportContent | SalesReportContent;
+
+/** A /sales-summary report (schema 3), as opposed to one built before it (schema 2). */
+export function isSalesReport(content: ReportContent): content is SalesReportContent {
+    return (content as SalesReportContent).kind === "sales";
+}
+
 export interface ReportItem {
     id: string;
     status: ReportStatus;
@@ -224,7 +303,7 @@ export interface ReportItem {
 }
 
 export interface ReportDetail extends ReportItem {
-    content: SummaryReportContent | null;
+    content: ReportContent | null;
 }
 
 /** GET /api/v1/reports/{id}/events */

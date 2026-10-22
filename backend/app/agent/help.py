@@ -108,7 +108,8 @@ def help_reply(
         "- break numbers down and rank them (by store, category, month, top 5 …)\n"
         "- compare periods or data sources, and show where a change came from\n"
         '- follow up on my last answer ("and last year?", "only GOLD")\n'
-        "- give you a daily report with suggestions, as a PDF too: type **/summary**"
+        "- give you a daily sales MIS report with action points, as a PDF too: "
+        "type **/sales-summary**"
     )
     if topic == "greeting":
         return f"Hi {_first_name(user_name)}! {capabilities}\n\n{sources}{try_these}"

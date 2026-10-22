@@ -150,6 +150,22 @@ class RegistryRepository:
         await self._session.flush()
         return bool(pins)
 
+    # --- table pins for /sales-summary reports (ADR 0016 §2) ---
+
+    async def set_lens_pin(self, model: SemanticModel, lens: str, use: bool) -> None:
+        """Always (`use`) or never use `model` for one report table."""
+        model.report_lenses = {**(model.report_lenses or {}), lens: use}
+        await self._session.flush()
+
+    async def clear_lens_pin(self, model: SemanticModel, lens: str) -> bool:
+        """Leaves that table to the agent again. False when there was no pin."""
+        pins = dict(model.report_lenses or {})
+        if pins.pop(lens, None) is None:
+            return False
+        model.report_lenses = pins
+        await self._session.flush()
+        return True
+
     # --- authorization cache (policy lives in Phase 5) ---
 
     async def get_access(

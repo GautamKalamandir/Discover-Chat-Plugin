@@ -66,6 +66,10 @@ DEFAULT_REPORT_MAX_DRIVERS = 3
 DEFAULT_REPORT_MAX_FOCUS = 2
 DEFAULT_REPORT_MAX_SUGGESTIONS = 6
 DEFAULT_REPORT_DOWNLOAD_LINK_SECONDS = 60
+# /sales-summary investigation loop (ADR 0016).
+DEFAULT_SALES_REPORT_QUERIES_PER_TABLE = 4  # lean by default (ADR 0016 amendment 1)
+DEFAULT_SALES_REPORT_ROOT_CAUSE_LOBS = 3
+DEFAULT_SALES_REPORT_QUERY_CONCURRENCY = 4
 _MAX_HOURS_OR_MINUTES = 1_000_000  # guards against overflow from absurd values
 _FALLBACKS = {
     "conversation_retention_hours": DEFAULT_CONVERSATION_RETENTION_HOURS,
@@ -111,6 +115,9 @@ _FALLBACKS = {
     "report_download_link_seconds": DEFAULT_REPORT_DOWNLOAD_LINK_SECONDS,
     "report_trend_days": DEFAULT_REPORT_TREND_DAYS,
     "report_inactive_lookback_days": DEFAULT_REPORT_INACTIVE_LOOKBACK_DAYS,
+    "sales_report_queries_per_table": DEFAULT_SALES_REPORT_QUERIES_PER_TABLE,
+    "sales_report_root_cause_lobs": DEFAULT_SALES_REPORT_ROOT_CAUSE_LOBS,
+    "sales_report_query_concurrency": DEFAULT_SALES_REPORT_QUERY_CONCURRENCY,
 }
 
 # Power BI client applications that request tokens for custom visuals (commercial cloud).
@@ -229,6 +236,9 @@ class Settings(BaseSettings):
         "report_download_link_seconds",
         "report_trend_days",
         "report_inactive_lookback_days",
+        "sales_report_queries_per_table",
+        "sales_report_root_cause_lobs",
+        "sales_report_query_concurrency",
         mode="before",
     )
     @classmethod
@@ -298,6 +308,9 @@ class Settings(BaseSettings):
     llm_max_output_tokens: int = Field(default=4096, gt=0)
     llm_timeout_seconds: int = DEFAULT_LLM_TIMEOUT_SECONDS
     llm_max_retries: int = DEFAULT_LLM_MAX_RETRIES
+    # Tokens per minute the LLM account allows (input + answer room); calls wait to stay under it
+    # instead of failing. 0 = no pacing. Groq free tier: 8000 (ADR 0016 amendment 1).
+    llm_tokens_per_minute: int = Field(default=0, ge=0)
     groq_api_key: SecretStr | None = None
     groq_base_url: str = "https://api.groq.com/openai/v1"
     openai_api_key: SecretStr | None = None
@@ -362,6 +375,11 @@ class Settings(BaseSettings):
     # Days in each section's trend chart, and the window for "no activity now" alerts.
     report_trend_days: int = DEFAULT_REPORT_TREND_DAYS
     report_inactive_lookback_days: int = DEFAULT_REPORT_INACTIVE_LOOKBACK_DAYS
+    # /sales-summary (ADR 0016): queries the agent may run per table and model (the seed included),
+    # how many degrowing LOBs get the root-cause drill-down, and Power BI queries at once per build.
+    sales_report_queries_per_table: int = DEFAULT_SALES_REPORT_QUERIES_PER_TABLE
+    sales_report_root_cause_lobs: int = DEFAULT_SALES_REPORT_ROOT_CAUSE_LOBS
+    sales_report_query_concurrency: int = DEFAULT_SALES_REPORT_QUERY_CONCURRENCY
 
     @field_validator("report_timezone", mode="before")
     @classmethod

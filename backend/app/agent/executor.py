@@ -61,20 +61,23 @@ class Executor:
         *,
         max_rows: int,
         report_id: uuid.UUID | None = None,
+        repair: bool = True,
     ) -> StepOutcome:
         """Queries are recorded against the chat session, or against `report_id` for /summary
-        builds (ADR 0015)."""
+        builds (ADR 0015). `repair=False` for DAX the server built itself (ADR 0016): a rejected or
+        failing query is raised at once instead of being rewritten by the LLM."""
         model_uuid = authz.allowed[step.model_id].model_uuid
         record = functools.partial(self._record, chat, report_id, model_uuid)
         dax = step.custom_dax or build_dax(
             step, today=self._today(), fiscal_start_month=self._fiscal_start
         )
-        for attempt in range(self._max_repairs + 1):
+        repairs = self._max_repairs if repair else 0
+        for attempt in range(repairs + 1):
             try:
                 validate_dax(dax, schema)
             except DaxValidationError as exc:
                 await record(dax, QueryStatus.REJECTED, error="rejected")
-                if attempt == self._max_repairs:
+                if attempt == repairs:
                     raise
                 dax = await self._planner.repair_dax(dax, exc.reason, context)
                 continue
@@ -84,7 +87,7 @@ class Executor:
                 )
             except DaxQueryError as exc:
                 await record(dax, QueryStatus.FAILED, error="dax_error")
-                if attempt == self._max_repairs:
+                if attempt == repairs:
                     raise
                 logger.info("Repairing DAX for %s (attempt %d)", step.model_id, attempt + 1)
                 dax = await self._planner.repair_dax(dax, exc.dax_error, context)

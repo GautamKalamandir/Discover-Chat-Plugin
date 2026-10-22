@@ -17,7 +17,7 @@ import uuid
 from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass, field
 from datetime import date, datetime
-from typing import Any, Literal
+from typing import Any, Literal, Protocol
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -28,9 +28,11 @@ from app.core.errors import AppError, ErrorCode
 from app.db.models import AuditOutcome, User
 from app.db.repositories.audit import AuditRepository
 from app.db.repositories.reports import ReportRepository
-from app.reports.builder import NOTHING_LOADED, ReportBuilder, ReportBuildError, ReportProgress
-from app.reports.models import SummaryReportContent
+from app.reports.builder import NOTHING_LOADED, ProgressCallback, ReportBuildError, ReportProgress
 from app.reports.pdf import render_pdf
+from app.reports.sales.builder import NO_SALES_MODELS
+from app.reports.sales.content import ReportContent, SalesReportContent
+from app.reports.sales.pdf import render_sales_pdf
 from app.reports.store import ReportStore
 
 logger = logging.getLogger(__name__)
@@ -41,12 +43,32 @@ FAILED_MESSAGE = "The report couldn't be built. Please try again."
 FAILURE_MESSAGES = {
     "no_models": NO_SOURCES,
     "all_models_failed": NOTHING_LOADED,
+    "no_sales_models": NO_SALES_MODELS,
     "build_timeout": TIMEOUT_MESSAGE,
 }
 
 
 def failure_message(error_code: str | None) -> str:
     return FAILURE_MESSAGES.get(error_code or "", FAILED_MESSAGE)
+
+
+class ContentBuilder(Protocol):
+    """Builds a report's content as the user: /sales-summary (ADR 0016) or the schema-2 report."""
+
+    async def build(
+        self,
+        authz: AuthorizedContext,
+        report_id: uuid.UUID,
+        *,
+        user_name: str | None,
+        progress: ProgressCallback | None = None,
+    ) -> ReportContent: ...
+
+
+def render(content: ReportContent, *, company_name: str, logo_path: str | None) -> bytes:
+    if isinstance(content, SalesReportContent):
+        return render_sales_pdf(content, company_name=company_name, logo_path=logo_path)
+    return render_pdf(content, company_name=company_name, logo_path=logo_path)
 
 
 @dataclass(frozen=True)
@@ -90,7 +112,7 @@ class _Channel:
 class ReportBuildManager:
     def __init__(
         self,
-        builder: ReportBuilder,
+        builder: ContentBuilder,
         store: ReportStore,
         sessionmaker: async_sessionmaker[AsyncSession],
         settings: Settings,
@@ -184,7 +206,7 @@ class ReportBuildManager:
                 )
                 await progress(ReportProgress("rendering_pdf"))
                 pdf = await asyncio.to_thread(
-                    render_pdf,
+                    render,
                     content,
                     company_name=self._settings.report_company_name,
                     logo_path=self._settings.report_logo_path,
@@ -193,7 +215,10 @@ class ReportBuildManager:
                     authz.user_id, report_id, "report.json", content.model_dump_json().encode()
                 )
                 pdf_path = await self._store.write(authz.user_id, report_id, "report.pdf", pdf)
-            await self._ready(authz, report_id, content, json_path, pdf_path)
+            if not await self._ready(authz, report_id, content, json_path, pdf_path):
+                # The row stopped being "building" meanwhile (failed as lost): don't claim success.
+                await self._failed(authz, report_id, channel, "build_lost", FAILED_MESSAGE)
+                return
         except TimeoutError:
             await self._failed(authz, report_id, channel, "build_timeout", TIMEOUT_MESSAGE)
             return
@@ -220,20 +245,23 @@ class ReportBuildManager:
         self,
         authz: AuthorizedContext,
         report_id: uuid.UUID,
-        content: SummaryReportContent,
+        content: ReportContent,
         json_path: str,
         pdf_path: str,
-    ) -> None:
+    ) -> bool:
         counts = content.suggestion_counts
+        models = content.model_status()
         async with self._sessionmaker() as session, session.begin():
-            await self.repository(session).mark_ready(
+            marked = await self.repository(session).mark_ready(
                 report_id,
-                models=content.model_status(),
+                models=models,
                 headline=_headline(content),
                 suggestion_counts=counts,
                 json_path=json_path,
                 pdf_path=pdf_path,
             )
+            if not marked:
+                return False
             await AuditRepository(session).record(
                 "report.built",
                 AuditOutcome.SUCCESS,
@@ -241,11 +269,12 @@ class ReportBuildManager:
                 correlation_id=authz.request.correlation_id,
                 details={
                     "report_id": str(report_id),
-                    "model_ids": [s.dataset_id for s in content.sections if s.status == "ok"],
+                    "model_ids": [m["dataset_id"] for m in models if m["status"] == "ok"],
                     "count": sum(counts.values()),
                 },
             )
         logger.info("Report %s ready", report_id)
+        return True
 
     async def _failed(
         self,
@@ -278,7 +307,10 @@ class ReportBuildManager:
         )
 
 
-def _headline(content: SummaryReportContent) -> str:
-    """The history list's one line: the executive summary's first sentence."""
-    first = content.summary.split(". ", 1)[0].strip()
+def _headline(content: ReportContent) -> str:
+    """The history list's one line: the summary's first sentence (its first bullet)."""
+    lines = content.summary.strip().splitlines()
+    first = lines[0].split(". ", 1)[0].strip() if lines else ""
+    if not first:
+        return ""
     return first if first.endswith(".") else f"{first}."

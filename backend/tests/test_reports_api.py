@@ -1,6 +1,6 @@
-"""/summary reports over HTTP (ADR 0015, design §4): background builds, reuse, progress, owner-only
-access, retention, PDF and one-time links. Real app (dev sign-in), test database, dev_synthetic
-data, a prompt-routing LLM, report files in a temporary folder.
+"""/sales-summary reports over HTTP (ADR 0015 design §4, ADR 0016): background builds, reuse,
+progress, owner-only access, retention, PDF and one-time links. Real app (dev sign-in), test
+database, dev_synthetic data, an LLM that plays each role, report files in a temporary folder.
 
 user-a may use Sales and HR, user-b only Sales, user-c nothing.
 """
@@ -9,6 +9,7 @@ import asyncio
 import uuid
 from collections.abc import AsyncIterator, Sequence
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -17,25 +18,27 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.api.v1 import reports as reports_api
 from app.core.errors import AppError, ErrorCode
 from app.llm.base import ChatMessage, LLMResponse
 from app.main import create_app
 from app.reports.builder import NOTHING_LOADED
 from app.reports.manager import TIMEOUT_MESSAGE
+from app.reports.models import SummaryReportContent
 from app.semantic.schema_source import DevFixtureSchemaSource
 from tests.authz_helpers import seed_registry
 from tests.semantic_helpers import FIXTURES, HashEmbedder, fixture
 from tests.test_chat_api import headers, parse_sse, settings
-from tests.test_report_builder import ReportLLM, llm
+from tests.test_sales_builder import SalesLLM
 
 pytestmark = pytest.mark.integration
 
 
-class SlowLLM(ReportLLM):
+class SlowLLM(SalesLLM):
     """Every answer takes `delay` seconds (time limit and shutdown tests)."""
 
     def __init__(self, delay: float) -> None:
-        super().__init__(**llm().handlers)
+        super().__init__()
         self.delay = delay
 
     async def complete(
@@ -49,7 +52,7 @@ class SlowLLM(ReportLLM):
 class Api:
     app: Any
     client: AsyncClient
-    llm: ReportLLM
+    llm: SalesLLM
     storage: Path
 
     @property
@@ -95,8 +98,8 @@ async def make_api(
     await seed_registry(committed_sessionmaker)
     built: list[Api] = []
 
-    async def build(model: ReportLLM | None = None, **overrides: Any) -> Api:
-        model = model or llm()
+    async def build(model: SalesLLM | None = None, **overrides: Any) -> Api:
+        model = model or SalesLLM()
         app = create_app(
             settings(test_database_url, report_storage_dir=str(tmp_path), **overrides),
             llm=model,
@@ -134,10 +137,14 @@ async def test_summary_builds_in_the_background_and_streams_progress(make_api: A
     assert names[0] == "progress" and names[-1] == "done"
     assert events[-1]["data"] == {"status": "ready", "report_id": body["report_id"]}
     done = [e["data"] for e in events if e["event"] == "model_done"]
-    assert {(d["model_name"], d["status"]) for d in done} == {("Sales", "ok"), ("HR", "no_data")}
-    assert sorted(d["done"] for d in done) == [1, 2] and {d["total"] for d in done} == {2}
+    # HR holds no sales data: it is left out, so only Sales is built (ADR 0016 §3).
+    assert [(d["model_name"], d["status"], d["done"], d["total"]) for d in done] == [
+        ("Sales", "ok", 1, 1)
+    ]
     stages = [e["data"]["stage"] for e in events if e["event"] == "progress"]
-    assert stages[0] == "starting" and "rendering_pdf" in stages
+    assert stages[:2] == ["starting", "discovering"]
+    assert {"lob_growth", "subcategory_loss", "price_range"} <= set(stages)
+    assert stages[-2:] == ["summarising", "rendering_pdf"]
     assert [e["id"] for e in events] == list(range(1, len(events) + 1))
 
 
@@ -150,14 +157,15 @@ async def test_a_ready_report_has_its_content_files_and_history_row(make_api: An
     assert response.status_code == 200
     detail = response.json()
     assert detail["status"] == "ready"
-    assert [(s["name"], s["status"]) for s in detail["content"]["sections"]] == [
-        ("HR", "no_data"),
-        ("Sales", "ok"),
-    ]
-    assert detail["content"]["summary"] == "All good today."
-    assert detail["headline"] == "All good today."
-    assert detail["suggestion_counts"] == {"high": 1, "medium": 0, "low": 1}
-    assert [m["name"] for m in detail["models"]] == ["HR", "Sales"]
+    content = detail["content"]
+    assert (content["schema_version"], content["kind"]) == (3, "sales")
+    assert [(s["name"], s["status"]) for s in content["sales_sections"]] == [("Sales", "ok")]
+    first = content["bullets"][0]["text"]
+    assert content["summary"].splitlines()[0] == first
+    assert detail["headline"] == first  # the history line: the first bullet
+    assert detail["suggestion_counts"] == {"high": len(content["actions"]), "medium": 0, "low": 0}
+    assert [m["name"] for m in detail["models"]] == ["Sales"]
+    assert "facts" not in content["sales_sections"][0]["tables"][0]
     files = sorted(p.name for p in api.storage.rglob("*") if p.is_file())
     assert files == ["report.json", "report.pdf"]
 
@@ -167,11 +175,11 @@ async def test_the_same_day_reuses_the_report_and_regenerate_builds_a_new_one(
 ) -> None:
     api = await make_api()
     first = await api.built("user-a")
-    planned = api.llm.count("kpis")
+    planned = api.llm.count("discovery")
 
     again = (await api.summary("user-a")).json()
     assert again == {"report_id": first, "status": "ready", "reused": True}
-    assert api.llm.count("kpis") == planned  # nothing rebuilt
+    assert api.llm.count("discovery") == planned  # nothing rebuilt
 
     second = await api.built("user-a", regenerate=True)
 
@@ -201,14 +209,60 @@ async def test_a_finished_build_replays_its_stored_status(make_api: Any) -> None
     assert [(e["event"], e["data"]["status"]) for e in events] == [("done", "ready")]
 
 
+async def test_a_build_on_another_instance_is_followed_until_it_finishes(
+    make_api: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(reports_api, "EVENTS_POLL_SECONDS", 0.05)
+    builder = await make_api(SlowLLM(delay=0.2))  # the instance that runs the build
+    other = await make_api()  # the instance the progress request reaches
+    started = (await builder.summary("user-b")).json()
+
+    events = await other.events("user-b", started["report_id"])
+
+    # Not "building": the other instance waits for the stored status to settle.
+    assert [(e["event"], e["data"]["status"]) for e in events] == [("done", "ready")]
+
+
 # --- failures -----------------------------------------------------------------------------------
 
 
-async def test_a_failed_build_says_why_and_the_next_summary_tries_again(make_api: Any) -> None:
-    def broken(_: str, __: Sequence[ChatMessage]) -> Any:
-        raise AppError(ErrorCode.LLM_UNAVAILABLE, "down", 503)
+async def test_a_report_whose_files_are_gone_is_not_found(make_api: Any) -> None:
+    api = await make_api()
+    report_id = await api.built("user-b")
+    for path in api.storage.rglob("report.*"):
+        path.unlink()
 
-    api = await make_api(llm(kpis=broken))
+    for suffix in ("", "/pdf"):
+        response = await api.get("user-b", f"/api/v1/reports/{report_id}{suffix}")
+        assert response.status_code == 404, suffix  # never a server error
+        assert response.json()["error"]["code"] == "report_not_found"
+
+
+async def test_a_build_failed_meanwhile_is_not_marked_ready(make_api: Any) -> None:
+    api = await make_api(SlowLLM(delay=0.3))
+    started = (await api.summary("user-b")).json()
+    report_id = uuid.UUID(started["report_id"])
+    async with api.sm() as session, session.begin():  # e.g. the deletion job judged it lost
+        await session.execute(
+            text(
+                "UPDATE summary_reports SET status = 'failed', error_code = 'build_lost' "
+                "WHERE id = :i"
+            ),
+            {"i": report_id},
+        )
+
+    events = await api.events("user-b", started["report_id"])
+
+    assert [e["event"] for e in events][-2:] == ["error", "done"]
+    assert events[-1]["data"]["status"] == "failed"
+    status = await api.scalar("SELECT status FROM summary_reports WHERE id = :i", i=report_id)
+    assert status == "failed"
+    assert not any(p.is_file() for p in api.storage.rglob("*"))  # its files are removed
+
+
+async def test_a_failed_build_says_why_and_the_next_summary_tries_again(make_api: Any) -> None:
+    # The agent can't say which data sources hold sales: nothing could be loaded.
+    api = await make_api(SalesLLM(discovery=AppError(ErrorCode.LLM_UNAVAILABLE, "down", 503)))
     started = (await api.summary("user-b")).json()
 
     events = await api.events("user-b", started["report_id"])
@@ -386,5 +440,27 @@ async def test_builds_are_audited_with_ids_and_counts_only(make_api: Any) -> Non
                 text("SELECT outcome, details FROM audit_events WHERE event_type = 'report.built'")
             )
         ).one()
+    actions = (await api.get("user-a", f"/api/v1/reports/{report_id}")).json()["content"]["actions"]
     assert row.outcome == "success"
-    assert row.details == {"report_id": report_id, "model_ids": ["sales-ds"], "count": 2}
+    assert row.details == {"report_id": report_id, "model_ids": ["sales-ds"], "count": len(actions)}
+
+
+async def test_a_report_stored_before_sales_summary_still_opens(make_api: Any) -> None:
+    # Reports keep 7 days: one built as schema 2 (ADR 0015) must still show after the update.
+    api = await make_api()
+    report_id = await api.built("user-b")
+    [stored] = list(api.storage.rglob("report.json"))
+    older = SummaryReportContent(
+        report_id=uuid.UUID(report_id),
+        generated_at=datetime(2026, 10, 13, 3, 0, tzinfo=UTC),
+        timezone="Asia/Kolkata",
+        user_name="User B",
+        summary="All good today.",
+        sections=[],
+    )
+    stored.write_text(older.model_dump_json(), encoding="utf-8")
+
+    detail = (await api.get("user-b", f"/api/v1/reports/{report_id}")).json()
+
+    assert detail["content"]["schema_version"] == 2 and "kind" not in detail["content"]
+    assert detail["content"]["summary"] == "All good today."

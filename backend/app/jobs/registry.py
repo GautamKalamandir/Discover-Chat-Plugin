@@ -13,6 +13,11 @@ Usage (from backend/):
     uv run python -m app.jobs.registry kpi list --dataset-id <id>
     uv run python -m app.jobs.registry kpi remove --dataset-id <id> \\
         --measure "Sales[Total Net Sales]"
+
+    # Which /sales-summary tables a model fills (ADR 0016). Without a pin the agent decides:
+    uv run python -m app.jobs.registry lens set   --dataset-id <id> --lens stock_turn [--off]
+    uv run python -m app.jobs.registry lens clear --dataset-id <id> --lens stock_turn
+    uv run python -m app.jobs.registry lens list  --dataset-id <id>
 """
 
 import argparse
@@ -23,6 +28,7 @@ from app.agent.models import parse_ref
 from app.core.config import get_settings
 from app.db.repositories.registry import RegistryRepository
 from app.db.session import create_engine, create_sessionmaker
+from app.reports.sales.lenses import LENSES
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -53,6 +59,20 @@ def _parser() -> argparse.ArgumentParser:
             action.add_argument("--measure", required=True, help="Table[Measure], as in the model")
         if name == "add":
             action.add_argument("--label", help="Name shown in the report (default: measure)")
+
+    lens = sub.add_parser("lens", help="Pin a model to a /sales-summary table, or exclude it")
+    lens_sub = lens.add_subparsers(dest="lens_command", required=True)
+    for name, text in (
+        ("set", "Always use the model for the table (--off: never)"),
+        ("clear", "Leave the table to the agent again"),
+        ("list", "List the model's pins"),
+    ):
+        action = lens_sub.add_parser(name, help=text)
+        action.add_argument("--dataset-id", required=True)
+        if name != "list":
+            action.add_argument("--lens", required=True, choices=LENSES)
+        if name == "set":
+            action.add_argument("--off", action="store_true", help="Never use it for this table")
     return parser
 
 
@@ -85,6 +105,8 @@ async def run(argv: list[str]) -> int:
                 print(f"registered {model.pbi_dataset_id} ({model.name}), {state}")
             elif args.command == "kpi":
                 return await _kpi(repo, args)
+            elif args.command == "lens":
+                return await _lens(repo, args)
             elif args.command == "list":
                 for model in await repo.list_all_models():
                     state = "enabled " if model.chatbot_enabled else "disabled"
@@ -124,6 +146,29 @@ async def _kpi(repo: RegistryRepository, args: argparse.Namespace) -> int:
             print(f"{pin.maps_to}  ({pin.term})")
         if not pins:
             print(f"no KPIs pinned for {model.name}")
+    return 0
+
+
+async def _lens(repo: RegistryRepository, args: argparse.Namespace) -> int:
+    model = await repo.get_model_by_pbi_id(args.dataset_id)
+    if model is None:
+        print(f"error: model {args.dataset_id} is not registered")
+        return 1
+    if args.lens_command == "set":
+        await repo.set_lens_pin(model, args.lens, not args.off)
+        print(f"{'never' if args.off else 'always'} use {model.name} for {args.lens}")
+    elif args.lens_command == "clear":
+        if not await repo.clear_lens_pin(model, args.lens):
+            print(f"error: {args.lens} is not pinned for {model.name}")
+            return 1
+        print(f"{args.lens} for {model.name} is left to the agent")
+    else:
+        pins = model.report_lenses or {}
+        for name in LENSES:
+            if name in pins:
+                print(f"{name}  {'always' if pins[name] else 'never'}")
+        if not pins:
+            print(f"no tables pinned for {model.name}; the agent decides")
     return 0
 
 

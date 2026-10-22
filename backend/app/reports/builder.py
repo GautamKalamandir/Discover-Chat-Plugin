@@ -36,7 +36,7 @@ from app.agent.context_builder import ContextBuilder, PlannerContext
 from app.agent.executor import Executor, StepOutcome
 from app.agent.help import NO_SOURCES
 from app.agent.models import Aggregation, ChangeAnalysis, PlanStep, TimeRange, parse_ref
-from app.agent.plan_validator import is_date_column, resolve_measure
+from app.agent.plan_validator import has_column, is_date_column, resolve_measure
 from app.agent.planner import Planner, untrusted
 from app.authz.models import AuthorizedContext, ModelSummary
 from app.core.config import Settings
@@ -65,7 +65,7 @@ from app.reports.models import (
     Trend,
 )
 from app.reports.text import change_words, clean_text, compact_indian, format_indian, percent
-from app.semantic.normalizer import NormalizedSchema, object_key
+from app.semantic.normalizer import NormalizedSchema
 from app.semantic.retriever import SemanticRetriever
 from app.semantic.user_schema import UserSchemaService
 
@@ -336,8 +336,16 @@ class ReportBuilder:
         *,
         max_rows: int,
     ) -> StepOutcome:
+        # The server built this DAX: a failure is not handed to the LLM to rewrite (ADR 0016).
         return await self._executor.run_step(
-            authz, None, step, schema, context, max_rows=max_rows, report_id=report_id
+            authz,
+            None,
+            step,
+            schema,
+            context,
+            max_rows=max_rows,
+            report_id=report_id,
+            repair=False,
         )
 
     async def _pins(self, model: ModelSummary, schema: NormalizedSchema) -> list[_Pin]:
@@ -404,7 +412,7 @@ class ReportBuilder:
         problems: list[str] = []
         date_column = choice.date_column
         if not date_column or not (
-            _has_column(date_column, schema) and is_date_column(date_column, schema)
+            has_column(date_column, schema) and is_date_column(date_column, schema)
         ):
             problems.append(f"date_column {date_column!r} is not a listed date column")
             date_column = None
@@ -433,14 +441,14 @@ class ReportBuilder:
                     )
                     continue
                 chosen.append((kpi.label, measure, None, target, kpi.higher_is_better))
-            elif kpi.aggregation and _has_column(kpi.aggregation.column, schema):
+            elif kpi.aggregation and has_column(kpi.aggregation.column, schema):
                 chosen.append((kpi.label, None, kpi.aggregation, target, kpi.higher_is_better))
             else:
                 problems.append(f"KPI {kpi.label!r} has no listed measure or column")
 
         breakdowns: list[str] = []
         for ref in choice.breakdowns:
-            if not _has_column(ref, schema):
+            if not has_column(ref, schema):
                 problems.append(f"unknown column {ref}")
             elif is_date_column(ref, schema):
                 problems.append(f"breakdown {ref} is a date column")
@@ -723,12 +731,9 @@ class ReportBuilder:
             payload["assumptions"] = plan.assumptions
 
         # The agent only sees formatted figures; grounding compares against the exact ones.
+        # Dates written in the text are taken out before checking (`_grounded`), so day and month
+        # numbers are never allowed as figures.
         allowed = _numbers(rows, analyses, performers, inactive, trend)
-        allowed += facts.date_numbers(
-            periods.day, periods.prev_day, periods.week_ago, *periods.mtd, *periods.last_mtd
-        )
-        if trend is not None:
-            allowed += facts.date_numbers(*(p.day for p in trend.days))
         evidence_ids = {r.id for r in rows} | {a.id for a in analyses}
         evidence_ids |= {c.fact_id for r in rows for c in r.comparisons}
         evidence_ids |= {
@@ -815,7 +820,7 @@ class ReportBuilder:
             for s in ok
         ] + [{"data_source": s.name, "status": s.message} for s in others]
         allowed = _numbers([r for s in ok for r in s.kpis[:3]], [], [], [], None)
-        allowed += facts.numbers_in(payload) + facts.date_numbers(*(s.data_date for s in ok))
+        allowed += facts.numbers_in(payload)
         allowed += [float(len(sections)), float(len(ok))]
         messages = [
             ChatMessage("system", load_prompt("report_summary")),
@@ -998,13 +1003,8 @@ def _column_name(ref: str) -> str:
     return (parse_ref(ref) or ("", ref))[1]
 
 
-def _has_column(ref: str, schema: NormalizedSchema) -> bool:
-    parsed = parse_ref(ref)
-    return parsed is not None and object_key("column", *parsed) in schema.visible_keys
-
-
 def _grounded(text: str, allowed: list[float]) -> bool:
-    return not ungrounded_numbers(text, allowed)
+    return not ungrounded_numbers(facts.strip_dates(text), allowed)
 
 
 def _schema(model: type[BaseModel]) -> str:

@@ -66,3 +66,45 @@ async def test_unknown_models_and_unqualified_measures_are_refused(
 ) -> None:
     assert await registry_cli.run(argv) == code
     assert await pins(cli) == []
+
+
+# --- /sales-summary table pins (ADR 0016) -------------------------------------------------------
+
+
+async def lens_pins(sm: async_sessionmaker[AsyncSession]) -> dict[str, bool]:
+    async with sm() as session:
+        pins = await session.scalar(
+            text("SELECT report_lenses FROM semantic_models WHERE pbi_dataset_id = 'sales-ds'")
+        )
+        return dict(pins)
+
+
+async def test_tables_can_be_pinned_excluded_listed_and_cleared(
+    cli: async_sessionmaker[AsyncSession], capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert await lens_pins(cli) == {}  # new models leave every table to the agent
+
+    assert (
+        await registry_cli.run(["lens", "set", "--dataset-id", "sales-ds", "--lens", "stock_turn"])
+        == 0
+    )
+    off = ["lens", "set", "--dataset-id", "sales-ds", "--lens", "price_range", "--off"]
+    assert await registry_cli.run(off) == 0
+    assert await lens_pins(cli) == {"stock_turn": True, "price_range": False}
+
+    capsys.readouterr()
+    assert await registry_cli.run(["lens", "list", "--dataset-id", "sales-ds"]) == 0
+    assert capsys.readouterr().out.splitlines() == ["stock_turn  always", "price_range  never"]
+
+    clear = ["lens", "clear", "--dataset-id", "sales-ds", "--lens", "stock_turn"]
+    assert await registry_cli.run(clear) == 0
+    assert await lens_pins(cli) == {"price_range": False}
+    assert await registry_cli.run(clear) == 1  # nothing left to clear
+
+
+async def test_unknown_models_and_tables_are_refused(cli: async_sessionmaker[AsyncSession]) -> None:
+    unknown = ["lens", "set", "--dataset-id", "unknown-ds", "--lens", "stock_turn"]
+    assert await registry_cli.run(unknown) == 1
+    with pytest.raises(SystemExit):  # argparse: not one of the four tables
+        await registry_cli.run(["lens", "set", "--dataset-id", "sales-ds", "--lens", "made_up"])
+    assert await lens_pins(cli) == {}

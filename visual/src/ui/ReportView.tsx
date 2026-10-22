@@ -1,30 +1,31 @@
-// A /summary report in the chat (ADR 0015 and amendment 1), in the same order as the PDF:
-// at a glance, executive summary, action points (what, where, who, by when), then one collapsible
-// part per data source with its KPI table, charts and "no activity now" list; Download PDF,
-// Regenerate and the previous reports. All text is rendered as text (never HTML).
+// A report in the chat: the header, Download PDF, Regenerate and the previous reports, around the
+// report itself. /sales-summary reports (schema 3, ADR 0016) use SalesReportView; reports built
+// before it (schema 2, ADR 0015 and amendment 1) keep the view below, in the same order as their
+// PDF. All text is rendered as text (never HTML).
 
 import * as React from "react";
 
 import {
     DriverBreakdown,
     FocusAnalysis,
-    InactiveBreakdown,
+    isSalesReport,
     KpiComparison,
     KpiRow,
     ModelSection,
     OverviewRow,
-    Priority,
     ReportDetail,
     ReportItem,
-    Suggestion,
     SummaryReportContent,
-    Urgency,
 } from "../api/types";
 import { ReportState } from "../chat/store";
 import { DownloadOutcome } from "../reports/download";
 import { compactIndian, formatIndian, isGood, percentWords, tone } from "../reports/format";
 import { Markdown } from "./components";
 import { BarGroup, DivergingBars, TrendChart } from "./ReportCharts";
+import { ActionCard, formatDay, formatTime, Inactive, PRIORITIES, PRIORITY_LABEL } from "./ReportParts";
+import { SalesReport } from "./SalesReportView";
+
+export { formatDay, formatTime } from "./ReportParts";
 
 export interface ReportActions {
     download: (report: ReportDetail | ReportItem) => Promise<DownloadOutcome>;
@@ -32,38 +33,11 @@ export interface ReportActions {
     open: (report: ReportItem) => void;
 }
 
-const PRIORITIES: Priority[] = ["high", "medium", "low"];
-const PRIORITY_LABEL: Record<Priority, string> = { high: "High", medium: "Medium", low: "Low" };
-const URGENCY_LABEL: Record<Urgency, string> = { today: "Today", this_week: "This week", this_month: "This month" };
 const DOWNLOAD_TEXT: Record<DownloadOutcome, string> = {
     downloaded: "Downloaded.",
     cancelled: "Download cancelled.",
     opened: "The PDF opened in your browser.",
 };
-const MAX_INACTIVE = 10;
-
-/** "2026-10-12" -> "12 Oct 2026" (dates are calendar days; no time-zone shift). */
-export function formatDay(day: string | null): string {
-    if (!day) return "";
-    const [year, month, date] = day.slice(0, 10).split("-").map(Number);
-    return new Date(Date.UTC(year, month - 1, date)).toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        timeZone: "UTC",
-    });
-}
-
-export function formatTime(moment: string | null, timeZone?: string): string {
-    if (!moment) return "";
-    const options: Intl.DateTimeFormatOptions = { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" };
-    try {
-        return new Date(moment).toLocaleString("en-GB", { ...options, timeZone });
-    } catch {
-        return new Date(moment).toLocaleString("en-GB", options); // unknown time zone
-    }
-}
-
 /** The change shown under a value: "down 7.95%" (or the amount when there's no percent). */
 export function changeText(c: Pick<KpiComparison, "change" | "percent_change">): string {
     if (c.percent_change !== null) return percentWords(c.percent_change);
@@ -93,13 +67,12 @@ export function ReportView({
             setDownload(e instanceof Error && e.message ? e.message : "The PDF couldn't be downloaded.");
         }
     };
-    const withFigures = content.sections.filter((s) => s.status === "ok");
-    const without = content.sections.filter((s) => s.status !== "ok");
+    const sales = isSalesReport(content);
     const earlier = state.history.filter((r) => r.id !== detail.id && r.status === "ready");
 
     return (
-        <section className="report" aria-label="Daily summary report">
-            <h3>Daily MIS summary</h3>
+        <section className="report" aria-label={sales ? "Daily sales report" : "Daily summary report"}>
+            <h3>{sales ? "Daily sales MIS summary" : "Daily MIS summary"}</h3>
             <p className="report-meta">
                 Generated {formatTime(content.generated_at, content.timezone)}
                 {content.notes.map((note) => (
@@ -107,28 +80,7 @@ export function ReportView({
                 ))}
             </p>
 
-            <Overview content={content} />
-
-            <h4>Executive summary</h4>
-            <Markdown text={content.summary} />
-
-            <ActionPoints sections={content.sections} />
-
-            {withFigures.map((section) => (
-                <SectionView key={section.dataset_id} section={section} timeZone={content.timezone} />
-            ))}
-            {without.length > 0 && (
-                <details className="report-section without">
-                    <summary>Data sources without figures today ({without.length})</summary>
-                    <ul>
-                        {without.map((s) => (
-                            <li key={s.dataset_id}>
-                                <strong>{s.name}</strong>: {s.message}
-                            </li>
-                        ))}
-                    </ul>
-                </details>
-            )}
+            {sales ? <SalesReport content={content} /> : <SummaryReport content={content} />}
 
             <div className="report-actions">
                 <button type="button" onClick={() => void save(detail)}>
@@ -169,12 +121,45 @@ export function ReportView({
     );
 }
 
+/** A report built before /sales-summary (schema 2, ADR 0015): kept for the 7-day history. */
+function SummaryReport({ content }: { content: SummaryReportContent }): React.JSX.Element {
+    const withFigures = content.sections.filter((s) => s.status === "ok");
+    const without = content.sections.filter((s) => s.status !== "ok");
+    return (
+        <>
+            <Overview content={content} />
+
+            <h4>Executive summary</h4>
+            <Markdown text={content.summary} />
+
+            <ActionPoints sections={content.sections} />
+
+            {withFigures.map((section) => (
+                <SectionView key={section.dataset_id} section={section} timeZone={content.timezone} />
+            ))}
+            {without.length > 0 && (
+                <details className="report-section without">
+                    <summary>Data sources without figures today ({without.length})</summary>
+                    <ul>
+                        {without.map((s) => (
+                            <li key={s.dataset_id}>
+                                <strong>{s.name}</strong>: {s.message}
+                            </li>
+                        ))}
+                    </ul>
+                </details>
+            )}
+        </>
+    );
+}
+
 // --- at a glance and action points ------------------------------------------------------------------
 
 function Overview({ content }: { content: SummaryReportContent }): React.JSX.Element | null {
-    const rows: OverviewRow[] =
-        content.overview ??
-        content.sections.map((s) => ({
+    // Reports from before the at-a-glance table have an empty list: build it from the sections.
+    const rows: OverviewRow[] = content.overview?.length
+        ? content.overview
+        : content.sections.map((s) => ({
             dataset_id: s.dataset_id,
             name: s.name,
             status: s.status,
@@ -241,25 +226,6 @@ function ActionPoints({ sections }: { sections: ModelSection[] }): React.JSX.Ele
                 <p className="note">No action points for today.</p>
             )}
         </>
-    );
-}
-
-function ActionCard({ suggestion }: { suggestion: Suggestion }): React.JSX.Element {
-    const meta = [
-        suggestion.where ? `Where: ${suggestion.where}` : "",
-        suggestion.owner ? `Who: ${suggestion.owner}` : "",
-        suggestion.urgency ? `By: ${URGENCY_LABEL[suggestion.urgency]}` : "",
-    ].filter(Boolean);
-    return (
-        <article className="suggestion">
-            <p>
-                <span className={`badge ${suggestion.priority}`}>{PRIORITY_LABEL[suggestion.priority]}</span>{" "}
-                <strong>{suggestion.title}</strong> <span className="source">({suggestion.model_name})</span>
-            </p>
-            {meta.length > 0 && <p className="source">{meta.join(" · ")}</p>}
-            <p>{suggestion.reason}</p>
-            {suggestion.notes && <p className="note">{suggestion.notes}</p>}
-        </article>
     );
 }
 
@@ -480,31 +446,6 @@ function Targets({ rows }: { rows: KpiRow[] }): React.JSX.Element | null {
             <h5>Target achievement</h5>
             <DivergingBars groups={groups} label="Target achievement" marker={100} />
             <p className="note">Dark: the day. Light: month to date. The line marks 100% of target.</p>
-        </>
-    );
-}
-
-function Inactive({ blocks }: { blocks: InactiveBreakdown[] }): React.JSX.Element {
-    return (
-        <>
-            <h5>No activity now (had a value in the previous {blocks[0].lookback_days} days)</h5>
-            {blocks.map((block) => (
-                <div key={`${block.by}|${block.kpi_label}`} className="inactive">
-                    <p className="note">
-                        {block.kpi_label} by {block.by}: {block.total} item(s)
-                    </p>
-                    <ul>
-                        {block.items.slice(0, MAX_INACTIVE).map((item) => (
-                            <li key={item.item}>
-                                {item.item}: {formatIndian(item.baseline_value)} before, none on the latest day
-                            </li>
-                        ))}
-                        {block.total > Math.min(block.items.length, MAX_INACTIVE) && (
-                            <li className="note">and {block.total - Math.min(block.items.length, MAX_INACTIVE)} more</li>
-                        )}
-                    </ul>
-                </div>
-            ))}
         </>
     );
 }

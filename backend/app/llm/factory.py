@@ -23,6 +23,7 @@ def _groq(settings: Settings) -> LLMProvider:
         max_output_tokens=settings.llm_max_output_tokens,
         timeout_seconds=settings.llm_timeout_seconds,
         max_retries=settings.llm_max_retries,
+        tokens_per_minute=settings.llm_tokens_per_minute,
     )
 
 
@@ -38,6 +39,7 @@ def _openai(settings: Settings) -> LLMProvider:
         max_output_tokens=settings.llm_max_output_tokens,
         timeout_seconds=settings.llm_timeout_seconds,
         max_retries=settings.llm_max_retries,
+        tokens_per_minute=settings.llm_tokens_per_minute,
     )
 
 

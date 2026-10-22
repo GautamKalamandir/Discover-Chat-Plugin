@@ -1,6 +1,6 @@
 # 0015. `/summary` daily business reports, PDF download and 7-day deletion
 
-- Status: Accepted
+- Status: Accepted; report content partly superseded by [ADR 0016](0016-sales-summary.md) (2026-10-15)
 - Date: 2026-10-13
 - Design: [docs/design/phase-15-summary-reports.md](../design/phase-15-summary-reports.md)
 

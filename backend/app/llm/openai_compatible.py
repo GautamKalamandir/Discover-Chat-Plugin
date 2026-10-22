@@ -10,6 +10,8 @@ from openai import AsyncOpenAI
 
 from app.core.errors import AppError, ErrorCode
 from app.llm.base import ChatMessage, LLMProvider, LLMResponse
+from app.llm.budget import current_limits
+from app.llm.pacer import TokenPacer, estimate_tokens
 
 logger = logging.getLogger(__name__)
 
@@ -26,12 +28,16 @@ class OpenAICompatibleProvider(LLMProvider):
         max_output_tokens: int,
         timeout_seconds: float,
         max_retries: int,
+        tokens_per_minute: int = 0,
         client: Any = None,
     ) -> None:
         self.name = name
         self.model = model
         self._temperature = temperature
         self._max_tokens = max_output_tokens
+        # Only reasoning models take `reasoning_effort` (others reject the parameter).
+        self._reasoning = "gpt-oss" in model or model.startswith(("o1", "o3", "o4", "gpt-5"))
+        self._pacer = TokenPacer(tokens_per_minute) if tokens_per_minute > 0 else None
         self._client: Any = client or AsyncOpenAI(
             api_key=api_key, base_url=base_url, timeout=timeout_seconds, max_retries=max_retries
         )
@@ -42,23 +48,41 @@ class OpenAICompatibleProvider(LLMProvider):
         kwargs: dict[str, Any] = {}
         if json_mode:
             kwargs["response_format"] = {"type": "json_object"}
+        max_tokens = self._max_tokens
+        limits = current_limits()
+        if limits is not None:  # set by callers that know how long the answer should be
+            max_tokens = min(max_tokens, limits.max_output_tokens)
+            if limits.reasoning_effort and self._reasoning:
+                kwargs["reasoning_effort"] = limits.reasoning_effort
+        reservation = None
+        if self._pacer is not None:
+            estimate = estimate_tokens([m.content for m in messages]) + max_tokens
+            reservation = await self._pacer.reserve(estimate)
         try:
             response = await self._client.chat.completions.create(
                 model=self.model,
                 messages=_to_wire(messages),
                 temperature=self._temperature,
-                max_completion_tokens=self._max_tokens,
+                max_completion_tokens=max_tokens,
                 **kwargs,
             )
         except openai.APIError as exc:
             raise _unavailable(self.name, exc) from exc
         usage = getattr(response, "usage", None)
+        prompt = getattr(usage, "prompt_tokens", None)
+        completion = getattr(usage, "completion_tokens", None)
+        details = getattr(usage, "prompt_tokens_details", None)
+        cached = getattr(details, "cached_tokens", None) or 0
+        if reservation is not None and self._pacer is not None and prompt is not None:
+            # Cached input doesn't count towards the provider's limits.
+            self._pacer.settle(reservation, prompt - cached + (completion or 0))
         logger.info(
-            "LLM %s/%s tokens in=%s out=%s",
+            "LLM %s/%s tokens in=%s cached=%s out=%s",
             self.name,
             self.model,
-            getattr(usage, "prompt_tokens", None),
-            getattr(usage, "completion_tokens", None),
+            prompt,
+            cached,
+            completion,
         )
         return LLMResponse(
             content=response.choices[0].message.content or "",
@@ -93,9 +117,10 @@ def _to_wire(messages: Sequence[ChatMessage]) -> list[dict[str, str]]:
 
 def _unavailable(provider: str, exc: Exception) -> AppError:
     status = getattr(exc, "status_code", None)
+    hint = " (request larger than the tokens-per-minute limit)" if status == 413 else ""
     return AppError(
         ErrorCode.LLM_UNAVAILABLE,
         "The assistant is temporarily unavailable. Please try again in a moment.",
         503,
-        log_detail=f"{provider} API error {status}: {type(exc).__name__}",
+        log_detail=f"{provider} API error {status}: {type(exc).__name__}{hint}",
     )

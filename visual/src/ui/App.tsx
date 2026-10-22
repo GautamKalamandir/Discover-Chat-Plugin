@@ -39,10 +39,11 @@ export interface AppProps {
 }
 
 export const INTERRUPTED = "The answer was interrupted. Please try again.";
-/** Typed in the chat, this asks for today's report instead of asking the agent (ADR 0015). */
-export const SUMMARY_COMMAND = /^\/summary$/i;
+/** Typed in the chat, these ask for today's report instead of asking the agent (ADR 0015; ADR 0016:
+ * /sales-summary replaces /summary, which stays as an alias). */
+export const SUMMARY_COMMAND = /^\/(sales-)?summary$/i;
 export const STILL_BUILDING =
-    "Your report is still being prepared. Type /summary again in a minute to see it.";
+    "Your report is still being prepared. Type /sales-summary again in a minute to see it.";
 export const REPORT_FAILED = "The report couldn't be built. Please try again.";
 
 function userMessage(error: unknown): string {
@@ -155,7 +156,7 @@ export function App(props: AppProps): React.JSX.Element {
         }
     };
 
-    /** /summary: today's report, or follow its build. Stop only stops watching. */
+    /** /sales-summary: today's report, or follow its build. Stop only stops watching. */
     const runSummary = async (text: string, regenerate = false): Promise<void> => {
         const controller = new AbortController();
         abort.current = controller;
@@ -257,7 +258,7 @@ export function App(props: AppProps): React.JSX.Element {
                     <div className="messages" aria-live="polite">
                         {!state.messages.length && (
                             <p className="empty">
-                                Ask a question about your data, or type /summary for today&apos;s report.
+                                Ask a question about your data, or type /sales-summary for today&apos;s sales report.
                             </p>
                         )}
                         {state.messages.map((m) => (

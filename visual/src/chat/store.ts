@@ -12,7 +12,7 @@ import {
 
 export type MessageKind = "question" | "answer" | "clarification" | "notice" | "error" | "report";
 
-/** A /summary report in the chat (ADR 0015). Not part of the stored conversation: /summary shows
+/** A /sales-summary report in the chat (ADR 0015, 0016). Not part of the stored conversation: /summary shows
  * it again. */
 export interface ReportState {
     detail: ReportDetail | null;
@@ -57,10 +57,16 @@ export type ChatAction =
     | { type: "summary_stopped" };
 
 export const SUMMARY_STOPPED =
-    "Stopped watching. The report keeps being prepared: type /summary again in a minute to see it.";
+    "Stopped watching. The report keeps being prepared: type /sales-summary again in a minute to see it.";
 
 const REPORT_STAGES: Record<string, string> = {
     starting: "Starting your report…",
+    // /sales-summary (ADR 0016): finding the sales data, then each table of each data source.
+    discovering: "Finding your sales data…",
+    lob_growth: "LOB-wise growth: {model}…",
+    subcategory_loss: "Sub-category loss: {model}…",
+    stock_turn: "Stock turn: {model}…",
+    price_range: "Price ranges: {model}…",
     reading_model: "Reading {model}…",
     choosing_kpis: "Choosing the key figures for {model}…",
     querying: "Querying {model}…",

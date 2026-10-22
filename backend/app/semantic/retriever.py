@@ -11,7 +11,7 @@
 import asyncio
 import re
 import uuid
-from collections import defaultdict
+from collections import OrderedDict, defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any
@@ -32,6 +32,8 @@ RRF_K = 60
 VERIFIED_ANSWER_BOOST = 0.02
 EXACT_NAME_BOOST = 0.03
 SCHEMA_FETCH_CONCURRENCY = 4
+# Recent query embeddings kept (a report build repeats the same query for every model).
+QUERY_VECTOR_CACHE = 256
 _TOKEN = re.compile(r"[A-Za-z0-9_]{2,}")
 
 
@@ -67,6 +69,7 @@ class SemanticRetriever:
         self._user_schemas = user_schemas
         self._top_k = settings.retrieval_top_k
         self._candidates = settings.retrieval_candidates
+        self._query_vectors: OrderedDict[str, list[float]] = OrderedDict()
 
     async def search(
         self,
@@ -82,7 +85,7 @@ class SemanticRetriever:
             return []
         by_uuid = {m.model_uuid: m for m in models}
         space = await self._indexer.space()
-        query_vector = await self._indexer.embedder.embed_query(query)
+        query_vector = await self._query_vector(query)
 
         async with self._sessionmaker() as session:
             vector_ids = await self._vector_candidates(
@@ -174,6 +177,18 @@ class SemanticRetriever:
         return routed[:k]
 
     # --- internals -----------------------------------------------------------------------------
+
+    async def _query_vector(self, query: str) -> list[float]:
+        """The query's embedding, reused for repeated queries (same process, same embedder)."""
+        cached = self._query_vectors.get(query)
+        if cached is not None:
+            self._query_vectors.move_to_end(query)
+            return cached
+        vector = await self._indexer.embedder.embed_query(query)
+        self._query_vectors[query] = vector
+        if len(self._query_vectors) > QUERY_VECTOR_CACHE:
+            self._query_vectors.popitem(last=False)
+        return vector
 
     def _allowed_models(
         self, authz: AuthorizedContext, model_ids: Sequence[str] | None

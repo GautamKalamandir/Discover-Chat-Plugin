@@ -181,6 +181,9 @@ class SemanticModel(Base):
     chatbot_enabled: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     schema_version: Mapped[str | None] = mapped_column(String(128))
     last_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Admin pins for /sales-summary tables (ADR 0016): {lens: true} always use this model for that
+    # table, {lens: false} never. Lenses not listed are left to the agent.
+    report_lenses: Mapped[dict[str, bool]] = mapped_column(JSONB, server_default=text("'{}'"))
     created_at: Mapped[datetime] = _created_at()
     updated_at: Mapped[datetime] = _updated_at()
 
